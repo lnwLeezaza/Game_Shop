@@ -4,47 +4,47 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ══════════════════════════════════════════════════
-   GAMESHOP — GACHA DARK THEME  (Readability Edition)
-   bg: #050508 | text: #f1f5f9 | card: #0f0f1a
-   muted-fg: #94a3b8 | border: #2a2a45
+   SIAMITEM GAMER — PINK × PURPLE NEON LIGHT THEME
+   bg: #f8f5ff | text: #1a1028 | card: #ffffff
+   primary: #e879a0 | accent: #a855f7
    ══════════════════════════════════════════════════ */
 :root {
-  --background:          #050508;
-  --card:                #0f0f1a;
-  --popover:             #0f0f1a;
-  --foreground:          #f1f5f9;
-  --card-foreground:     #f1f5f9;
-  --popover-foreground:  #f1f5f9;
-  --primary:             #8b5cf6;
+  --background:          #f5f0ff;
+  --card:                #ffffff;
+  --popover:             #ffffff;
+  --foreground:          #1a1028;
+  --card-foreground:     #1a1028;
+  --popover-foreground:  #1a1028;
+  --primary:             #d946a8;
   --primary-foreground:  #ffffff;
-  --secondary:           #1e1e35;
-  --secondary-foreground:#cbd5e1;
-  --muted:               #1a1a2e;
-  --muted-foreground:    #94a3b8;
-  --accent:              #3b82f6;
+  --secondary:           #f0e8ff;
+  --secondary-foreground:#6b21a8;
+  --muted:               #f0e8ff;
+  --muted-foreground:    #7c3aed;
+  --accent:              #a855f7;
   --accent-foreground:   #ffffff;
   --destructive:         #ef4444;
   --destructive-foreground:#ffffff;
-  --border:              #2a2a45;
-  --input:               #1a1a2e;
-  --ring:                #8b5cf6;
-  --chart-1: #8b5cf6;
-  --chart-2: #3b82f6;
-  --chart-3: #f59e0b;
-  --chart-4: #10b981;
-  --chart-5: #f43f5e;
+  --border:              #e9d5ff;
+  --input:               #f5f0ff;
+  --ring:                #d946a8;
+  --chart-1: #d946a8;
+  --chart-2: #a855f7;
+  --chart-3: #f472b6;
+  --chart-4: #818cf8;
+  --chart-5: #fb7185;
   --radius: 0.75rem;
-  --sidebar:                  #08080e;
-  --sidebar-foreground:       #e2e8f0;
-  --sidebar-primary:          #8b5cf6;
+  --sidebar:                  #fdf4ff;
+  --sidebar-foreground:       #1a1028;
+  --sidebar-primary:          #d946a8;
   --sidebar-primary-foreground:#ffffff;
-  --sidebar-accent:           #1a1a2e;
-  --sidebar-accent-foreground:#cbd5e1;
-  --sidebar-border:           #1e1e35;
-  --sidebar-ring:             #8b5cf6;
+  --sidebar-accent:           #f5e6ff;
+  --sidebar-accent-foreground:#6b21a8;
+  --sidebar-border:           #e9d5ff;
+  --sidebar-ring:             #d946a8;
 }
 
-html { color-scheme: dark; }
+html { color-scheme: light; }
 
 @theme inline {
   --font-sans: 'Noto Sans Thai', 'Geist', system-ui, sans-serif;
@@ -93,41 +93,42 @@ html { color-scheme: dark; }
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(ellipse at 20% 0%, rgba(139,92,246,0.08) 0%, transparent 55%),
-      radial-gradient(ellipse at 80% 0%, rgba(59,130,246,0.05) 0%, transparent 55%);
+      radial-gradient(ellipse at 15% 10%, rgba(217,70,168,0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 20%, rgba(168,85,247,0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(244,114,182,0.06) 0%, transparent 60%);
   }
 
-  h1, h2, h3, h4, h5, h6 { color: #f1f5f9; }
-  p  { color: #cbd5e1; }
-  label { color: #cbd5e1; }
+  h1, h2, h3, h4, h5, h6 { color: #1a1028; }
+  p  { color: #3b0764; }
+  label { color: #4c1d95; }
 
   input, textarea, select {
-    background-color: #1a1a2e !important;
-    border-color: #2a2a45 !important;
-    color: #f1f5f9 !important;
+    background-color: #fdf4ff !important;
+    border-color: #e9d5ff !important;
+    color: #1a1028 !important;
   }
   input:focus, textarea:focus {
-    border-color: #8b5cf6 !important;
-    box-shadow: 0 0 0 2px rgba(139,92,246,0.18) !important;
+    border-color: #d946a8 !important;
+    box-shadow: 0 0 0 3px rgba(217,70,168,0.15) !important;
     outline: none !important;
   }
   input::placeholder, textarea::placeholder {
-    color: #64748b !important;
+    color: #c084fc !important;
     opacity: 1 !important;
   }
 
-  th { color: #94a3b8 !important; font-weight: 600; }
-  td { color: #cbd5e1 !important; }
+  th { color: #7c3aed !important; font-weight: 600; }
+  td { color: #3b0764 !important; }
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0a0a12; }
-::-webkit-scrollbar-thumb { background: #2a2a45; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3d3d6a; }
+::-webkit-scrollbar-track { background: #f5f0ff; }
+::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #d946a8; }
 
 /* Selection */
-::selection { background: rgba(139,92,246,0.3); color: #f1f5f9; }
+::selection { background: rgba(217,70,168,0.25); color: #1a1028; }
 
 /* Ticker */
 @keyframes marquee {
@@ -136,10 +137,16 @@ html { color-scheme: dark; }
 }
 
 /* Tabs readable */
-[role="tablist"] [role="tab"][data-state="active"]   { color: #ffffff !important; }
-[role="tablist"] [role="tab"][data-state="inactive"] { color: #94a3b8 !important; }
-[role="option"]  { color: #f1f5f9 !important; }
-[role="listbox"] { background: #0f0f1a !important; border-color: #2a2a45 !important; }
+[role="tablist"] [role="tab"][data-state="active"]   { color: #d946a8 !important; }
+[role="tablist"] [role="tab"][data-state="inactive"] { color: #7c3aed !important; }
+[role="option"]  { color: #1a1028 !important; }
+[role="listbox"] { background: #ffffff !important; border-color: #e9d5ff !important; }
 
 /* Muted override */
-.text-muted-foreground { color: #94a3b8 !important; }
+.text-muted-foreground { color: #7c3aed !important; }
+
+/* ── Neon glow helpers (ใช้ได้เลยทุกที่) ─────────── */
+.neon-pink  { box-shadow: 0 0 16px rgba(217,70,168,0.45), 0 0 40px rgba(217,70,168,0.2); }
+.neon-purple{ box-shadow: 0 0 16px rgba(168,85,247,0.45), 0 0 40px rgba(168,85,247,0.2); }
+.glow-text-pink   { text-shadow: 0 0 12px rgba(217,70,168,0.6), 0 0 24px rgba(217,70,168,0.3); }
+.glow-text-purple { text-shadow: 0 0 12px rgba(168,85,247,0.6), 0 0 24px rgba(168,85,247,0.3); }
