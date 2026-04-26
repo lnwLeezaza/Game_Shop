@@ -7,6 +7,8 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.supabase.in' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'placehold.co' },
+      { protocol: 'https', hostname: 'upload.wikimedia.org' },
+      { protocol: 'https', hostname: 'play-lh.googleusercontent.com' },
     ],
   },
   experimental: {
