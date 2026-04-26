@@ -34,9 +34,10 @@ export interface Product {
   images: string[]
   details: Record<string, string>
   tags: string[]
-  views: number
+views: number
   createdAt: string
   updatedAt: string
+  stockPool?: string
 }
 
 // ==================== Order Types ====================

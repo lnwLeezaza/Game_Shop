@@ -24,7 +24,6 @@ const categoryColors: Record<string, string> = {
   other: 'bg-gradient-to-r from-gray-500 to-slate-500',
 }
 
-// FIX #6: ตัวอย่างอัตราโอกาส (ควรดึงจาก pool.odds จริงๆ)
 const defaultOdds = [
   { rarity: 'Legendary', chance: '1%', color: 'text-yellow-500' },
   { rarity: 'Epic', chance: '5%', color: 'text-purple-500' },
@@ -42,21 +41,22 @@ export function GachaCard({ pool }: GachaCardProps) {
   return (
     <Card className="group h-full overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1">
       <Link href={`/gacha/${pool.id}`}>
-        {/* FIX #4: ใช้ object-fit: cover ผ่าน Next.js Image เพื่อไม่ให้รูปบิดหรือแตก */}
+        {/* Use object-fit: cover via Next.js Image to prevent distortion */}
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
-          <Image
-            src={pool.image}
-            alt={name}
-            fill
-            className="object-cover transition-transform group-hover:scale-110"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            onError={(e) => {
-              // FIX: ถ้ารูปแตก ให้แสดง fallback gradient แทน
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-            }}
-          />
-          {/* Fallback gradient ถ้ารูปโหลดไม่ได้ */}
+          {pool.image?.startsWith('http') && (
+            <Image
+              src={pool.image}
+              alt={name}
+              fill
+              className="object-cover transition-transform group-hover:scale-110"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+              }}
+            />
+          )}
+          {/* Fallback gradient if image fails to load */}
           <div className="absolute inset-0 -z-0 bg-gradient-to-br from-purple-600 to-pink-600 opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -74,7 +74,6 @@ export function GachaCard({ pool }: GachaCardProps) {
       <CardContent className="p-4">
         <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">{description}</p>
 
-        {/* FIX #6: ปุ่มดูอัตราโอกาสรับรางวัล เพื่อความโปร่งใส */}
         <button
           onClick={() => setShowOdds(!showOdds)}
           className="mb-3 flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"

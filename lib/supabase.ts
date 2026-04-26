@@ -19,13 +19,17 @@ import type {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-const globalKey = '__supabase_client__'
-if (!(globalThis as any)[globalKey]) {
-  ;(globalThis as any)[globalKey] = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: true, autoRefreshToken: true },
-  })
+declare global {
+  var __supabase: ReturnType<typeof createClient> | undefined
 }
-export const supabase = (globalThis as any)[globalKey]
+
+export const supabase = globalThis.__supabase ?? createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: true, autoRefreshToken: true },
+})
+
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.__supabase = supabase
+}
 
 // ==================== Auth API ====================
 export const authAPI = {
@@ -214,6 +218,7 @@ export const productAPI = {
         details: product.details,
         tags: product.tags,
         views: 0,
+        stock_pool: (product as any).stockPool || 'none',
       })
       .select()
       .single()
@@ -233,6 +238,7 @@ export const productAPI = {
         details: updates.details,
         tags: updates.tags,
         updated_at: new Date().toISOString(),
+        ...((updates as any).stockPool !== undefined && { stock_pool: (updates as any).stockPool }),
       })
       .eq('id', id)
     if (error) throw error
@@ -686,10 +692,10 @@ function mapProduct(d: Record<string, unknown>): Product {
     tags: (d.tags as string[]) || [],
     views: d.views as number,
     createdAt: d.created_at as string,
-    updatedAt: d.updated_at as string,
+updatedAt: d.updated_at as string,
+    stockPool: (d.stock_pool as string) || 'none',
   }
 }
-
 function mapOrder(d: Record<string, unknown>): Order {
   return {
     id: d.id as string,

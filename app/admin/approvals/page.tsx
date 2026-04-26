@@ -49,8 +49,8 @@ export default function AdminApprovalsPage() {
     try {
       const { supabase } = await import('@/lib/supabase')
       const [{ data: deps }, { data: withs }] = await Promise.all([
-        supabase.from('deposits').select('*, users(username, display_name, email)').order('created_at', { ascending: false }),
-        supabase.from('withdrawals').select('*, users(username, display_name, email)').order('created_at', { ascending: false }),
+        supabase.from('deposits').select('*,  users!deposits_user_id_fkey(username, display_name)').order('created_at', { ascending: false }),
+        supabase.from('withdrawals').select('*,  users!withdrawals_user_id_fkey(username, display_name)').order('created_at', { ascending: false }),
       ])
       if (!deps && !withs) throw new Error('no data')
       const depRows: DepositRow[] = (deps ?? []).map((d: any) => ({
@@ -95,8 +95,8 @@ export default function AdminApprovalsPage() {
         const { error } = await supabase.rpc('approve_withdrawal', { p_withdrawal_id: row.id, p_admin_id: user!.id })
         if (error) throw error
       }
-      toast.success(`✅ อนุมัติสำเร็จ ฿${row.amount.toLocaleString()} — ${row.userName}`)
-    } catch {
+    toast.success(`✅ อนุมัติสำเร็จ ฿${row.amount.toLocaleString()} — ${row.userName}`)
+    } catch (e) {
       // Fallback: direct update
       try {
         const { supabase } = await import('@/lib/supabase')
@@ -109,8 +109,9 @@ export default function AdminApprovalsPage() {
         toast.success(`✅ อนุมัติสำเร็จ ฿${row.amount.toLocaleString()}`)
       } catch { toast.success(`✅ อนุมัติ (offline mode) ฿${row.amount.toLocaleString()}`) }
     }
-    setRows(r => r.map(x => x.id === row.id ? { ...x, status: 'approved' } : x))
+  setRows(r => r.map(x => x.id === row.id ? { ...x, status: 'approved' } : x))
     setActionId(null)
+    setTimeout(() => fetchAll(false), 500)
   }
 
   const reject = async () => {

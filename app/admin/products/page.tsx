@@ -31,7 +31,7 @@ const statusColors: Record<string, string> = {
 const EMPTY_FORM = {
   title: '', description: '', price: '', originalPrice: '',
   category: 'rov', type: 'account', status: 'available',
-  tags: '', imageUrl: '',
+  tags: '', imageUrl: '', stockPool: 'none',
 }
 
 export default function AdminProductsPage() {
@@ -46,6 +46,7 @@ export default function AdminProductsPage() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState({ ...EMPTY_FORM })
+  const [stockPreview, setStockPreview] = useState<any[]>([])
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -65,7 +66,7 @@ export default function AdminProductsPage() {
       title: p.title, description: p.description,
       price: String(p.price), originalPrice: String(p.originalPrice || ''),
       category: p.category, type: p.type, status: p.status,
-      tags: p.tags.join(', '), imageUrl: '',
+      tags: p.tags.join(', '), imageUrl: '', stockPool: (p as any).stockPool || 'none',
     })
     setImageFiles([]); setImagePreviews(p.images || [])
     setShowForm(true)
@@ -107,6 +108,7 @@ export default function AdminProductsPage() {
         sellerId: user!.id,
         sellerName: th ? 'ทีมงาน GameShop' : 'GameShop Official',
         details: {},
+        stockPool: form.stockPool,
       }
 
       if (editProduct) {
@@ -214,8 +216,50 @@ export default function AdminProductsPage() {
                 {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-
-            {/* Tags */}
+        {/* Stock Pool */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={labelStyle}>📦 STOCK POOL (ดึง account อัตโนมัติจาก pool)</label>
+              <select value={form.stockPool} onChange={async e => {
+                const val = e.target.value
+                setForm(f => ({ ...f, stockPool: val }))
+                if (val !== 'none') {
+                  try {
+                    const { supabase } = await import('@/lib/supabase')
+                    const { data } = await supabase.from('stock_items').select('id, account_id, account_password, note').eq('game_category', val).eq('status', 'available').order('created_at').limit(5)
+                    setStockPreview(data || [])
+                  } catch { setStockPreview([]) }
+                } else { setStockPreview([]) }
+              }} style={{ ...inputStyle, cursor: 'pointer' }}>
+                <option value="none">ไม่ใช้ stock pool</option>
+                <option value="rov">⚔️ RoV Pool</option>
+                <option value="freefire">🔥 Free Fire Pool</option>
+                <option value="efootball">⚽ eFootball Pool</option>
+                <option value="pubg">🎯 PUBG Pool</option>
+                <option value="genshin">✨ Genshin Pool</option>
+                <option value="roblox">🧱 Roblox Pool</option>
+                <option value="other">🎮 Other Pool</option>
+              </select>
+              {stockPreview.length > 0 && (
+                <div style={{ marginTop: '8px', background: '#070710', border: '1px solid #1a1a2e', borderRadius: '8px', padding: '10px' }}>
+                  <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '6px', fontFamily: 'monospace' }}>
+                    📋 STOCK ที่พร้อมขาย ({stockPreview.length} รายการแรก)
+                  </div>
+                  {stockPreview.map((s: any, i: number) => (
+                    <div key={s.id} style={{ display: 'flex', gap: '12px', padding: '6px 0', borderBottom: i < stockPreview.length - 1 ? '1px solid #1a1a2e' : 'none', fontSize: '12px', fontFamily: 'monospace' }}>
+                      <span style={{ color: '#94a3b8', minWidth: '20px' }}>{i + 1}.</span>
+                      <span style={{ color: '#f1f5f9' }}>ID: {s.account_id}</span>
+                      <span style={{ color: '#64748b' }}>Pass: {s.account_password}</span>
+                      {s.note && <span style={{ color: '#8b5cf6' }}>{s.note}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {form.stockPool !== 'none' && stockPreview.length === 0 && (
+                <div style={{ marginTop: '8px', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', fontSize: '12px', color: '#f87171', fontFamily: 'monospace' }}>
+                  ⚠️ ไม่มี stock ใน pool นี้ — กรุณาเพิ่ม stock ก่อนลงสินค้า
+                </div>
+              )}
+            </div>
             <div>
               <label style={labelStyle}>{th ? 'แท็ก (คั่น , )' : 'TAGS (comma separated)'}</label>
               <input type="text" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}

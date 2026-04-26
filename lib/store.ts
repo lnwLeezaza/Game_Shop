@@ -230,6 +230,18 @@ export const useOrderStore = create<OrderState>()((set) => ({
       await useAuthStore.getState().refreshUser()
       useProductStore.getState().updateProduct(productId, { status: 'reserved' })
       set(state => ({ orders: [order, ...state.orders] }))
+
+      // Assign stock อัตโนมัติ
+      try {
+        const { supabase } = await import('./supabase')
+        const { data: stockResult } = await supabase.rpc('assign_stock_to_order', { p_order_id: order.id })
+        if (stockResult?.success) {
+          // ส่ง delivery info ให้ order
+          const deliveryInfo = `Account ID: ${stockResult.account_id}\nPassword: ${stockResult.account_password}${stockResult.note ? '\nNote: ' + stockResult.note : ''}`
+          await orderAPI.updateOrderStatus(order.id, order.status, deliveryInfo)
+        }
+      } catch {}
+
       return order
     } catch { return null }
   },

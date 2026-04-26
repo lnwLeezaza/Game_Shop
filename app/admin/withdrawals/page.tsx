@@ -32,7 +32,7 @@ export default function AdminWithdrawalsPage() {
     try {
       const { supabase } = await import('@/lib/supabase')
       const { data, error } = await supabase
-        .from('withdrawals').select('*, users(username, display_name)').order('created_at', { ascending: false })
+        .from('withdrawals').select('*, users!withdrawals_user_id_fkey(username, display_name)').order('created_at', { ascending: false })
       if (!error && data) {
         setWithdrawals(data.map((w: any) => ({ ...w, userName: w.users?.display_name || w.users?.username || w.user_id })))
       }

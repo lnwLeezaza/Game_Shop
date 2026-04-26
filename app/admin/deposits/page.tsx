@@ -94,7 +94,7 @@ export default function AdminDepositsPage() {
     setLoading(true)
     try {
       const { supabase } = await import('@/lib/supabase')
-      const { data, error } = await supabase.from('deposits').select('*, users(username, display_name)').order('created_at', { ascending: false })
+      const { data, error } = await supabase.from('deposits').select('*, users!deposits_user_id_fkey(username, display_name)').order('created_at', { ascending: false })
       if (!error && data) {
         const mapped = data.map((d: any) => ({ ...d, userName: d.users?.display_name || d.users?.username || d.user_id }))
         setDeposits(mapped)

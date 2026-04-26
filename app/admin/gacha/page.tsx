@@ -40,7 +40,7 @@ const RARITY_COLOR: Record<string, string> = {
 
 const EMPTY_POOL = {
   name: '', name_th: '', description: '', description_th: '',
-  category: 'action', price: 100, image: '', is_active: true,
+  category: 'rov', price: 100, image: '', is_active: true,
 }
 
 const EMPTY_ITEM: GachaItem = {
@@ -301,7 +301,7 @@ export default function AdminGachaPage() {
                 <div>
                   <label style={s.label}>หมวดหมู่</label>
                   <select style={s.input} value={editPool.category} onChange={e => setEditPool((p: any) => ({ ...p, category: e.target.value }))}>
-                    {['action', 'rpg', 'fps', 'moba', 'sports', 'other'].map(c => <option key={c} value={c}>{c}</option>)}
+                    {['rov', 'freefire', 'efootball', 'pubg', 'genshin', 'roblox', 'other'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>

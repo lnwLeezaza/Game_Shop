@@ -20,6 +20,7 @@ const adminNavItems = [
   { href: '/admin/deposits',     icon: Wallet,          labelTh: 'ฝากเงิน',            labelEn: 'Deposits',   badge: null },
   { href: '/admin/withdrawals',  icon: Wallet,          labelTh: 'ถอนเงิน',            labelEn: 'Withdrawals',badge: null },
   { href: '/admin/gacha',        icon: Gift,            labelTh: 'ตู้สุ่ม',             labelEn: 'Gacha',      badge: null },
+  { href: '/admin/stock',        icon: Package,         labelTh: '📦 สต็อก',            labelEn: 'Stock',      badge: null },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

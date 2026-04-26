@@ -118,7 +118,7 @@ export default function ProductDetailPage({
     const order = await createOrder(product.id, user.id)
     if (order) {
       toast.success(locale === 'th' ? 'สั่งซื้อสำเร็จ!' : 'Order placed successfully!')
-      router.push(`/orders/${order.id}`)
+     router.push('/orders')
     } else {
       toast.error(t.errors.somethingWentWrong)
     }
@@ -274,7 +274,7 @@ export default function ProductDetailPage({
               </div>
 
               {/* Seller Info */}
-              {seller && (
+              {product.sellerName && (
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">
