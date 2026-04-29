@@ -92,7 +92,7 @@ const GAMES = [
     tag: 'ยอดนิยม',
     tagColor: '#ef4444',
     currency: 'เหรียญทอง',
-    href: '/products?category=rov',
+    href: '/topup',
     topPack: { label: '100 เหรียญ', price: '฿29', was: '฿35' },
   },
   {
@@ -127,7 +127,7 @@ const GAMES = [
     id: 'deltaforce',
     name: 'Delta Force',
     fullName: 'Mobile',
-    logo: 'https://play-lh.googleusercontent.com/KAHvAcVdKTxs9g8gGIBTNn_9J4GHRWaR5V_Y6jnKLuMhj6pJvRbgkUDp0gLRdSA_aao=w96-h96',
+    logo: '/gamespic/delta force.jpg',
     fallback: 'DF',
     colorA: '#475569',
     colorB: '#0f172a',
@@ -183,7 +183,7 @@ const GAMES = [
     id: 'mlbb',
     name: 'Mobile Legends',
     fullName: 'Bang Bang',
-    logo: 'https://play-lh.googleusercontent.com/x_xDDNEQRPlCv7dkrFv8i-aFEH0BzO-fDeJBXx7oe9h9FcNFpPPmvBl9C2UKQMGQag=w96-h96',
+    Logo: '/gamespic/mmlb.jpg',
     fallback: 'ML',
     colorA: '#2563eb',
     colorB: '#1e3a8a',
@@ -250,16 +250,23 @@ function Ticker() {
     </div>
   )
 }
-
 function FlashTimer({ accentColor }: { accentColor: string }) {
-  const [secs, setSecs] = useState(() => 3600 - (Math.floor(Date.now() / 1000) % 3600))
+  const [secs, setSecs] = useState(3600)  // ← ค่าคงที่ ไม่ใช้ Date.now()
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
+    setMounted(true)
+    setSecs(3600 - (Math.floor(Date.now() / 1000) % 3600))  // ← sync หลัง mount
     const t = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 3599)), 1000)
     return () => clearInterval(t)
   }, [])
+
   const h = Math.floor(secs / 3600).toString().padStart(2, '0')
   const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0')
   const sc = (secs % 60).toString().padStart(2, '0')
+
+  if (!mounted) return null  // ← ไม่ render บน server
+
   return (
     <span className="text-[11px] font-black tabular-nums" style={{ color: accentColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.04em' }}>
       {h}:{m}:{sc}
