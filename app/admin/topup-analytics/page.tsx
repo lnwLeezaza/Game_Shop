@@ -1,11 +1,11 @@
 "use client";
 
 // app/admin/topup-analytics/page.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/topup-client";
 import {
   TrendingUp, ShoppingCart, CheckCircle2, XCircle, Clock,
-  RefreshCw, ChevronDown, ChevronUp, Search
+  RefreshCw, ChevronDown, ChevronUp, Search, Radio
 } from "lucide-react";
 
 // ══════════════════════════════════════════════
@@ -29,7 +29,7 @@ interface Order {
   created_at: string;
   updated_at: string;
   // joined
-  products?: { name: string; image_url: string | null };
+  topup_products?: { name: string; image_url: string | null };
   topup_packages?: { name: string; diamond_amount: number; currency_label: string };
 }
 
@@ -104,8 +104,12 @@ export default function TopupAnalyticsPage() {
   const [gameStats,    setGameStats]    = useState<GameStat[]>([]);
   const [pkgStats,     setPkgStats]     = useState<PackageStat[]>([]);
   const [lastRefresh,  setLastRefresh]  = useState(new Date());
+  const [isLive,       setIsLive]       = useState(false); // ── สถานะ Realtime connection
 
-  const fetchData = async () => {
+  // ══════════════════════════════════════════════
+  //  FETCH DATA (useCallback เพื่อใช้เป็น dep)
+  // ══════════════════════════════════════════════
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // ── orders with joins ──
@@ -113,7 +117,7 @@ export default function TopupAnalyticsPage() {
         .from("topup_orders")
         .select(`
           *,
-          products ( name, image_url ),
+          topup_products ( name, image_url ),
           topup_packages ( name, diamond_amount, currency_label )
         `)
         .order(sortBy, { ascending: sortDir === "asc" })
@@ -129,8 +133,8 @@ export default function TopupAnalyticsPage() {
         const key = o.product_id;
         const prev = gameMap.get(key) ?? {
           product_id: o.product_id,
-          name: o.products?.name ?? o.product_id.slice(0,8),
-          image_url: o.products?.image_url ?? null,
+          name: o.topup_products?.name ?? o.product_id.slice(0,8),
+          image_url: o.topup_products?.image_url ?? null,
           total_orders: 0, success_orders: 0, total_revenue: 0,
         };
         gameMap.set(key, {
@@ -165,9 +169,42 @@ export default function TopupAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, sortDir]); // re-create เมื่อ sort เปลี่ยน
 
-  useEffect(() => { fetchData(); }, [sortBy, sortDir]);
+  // ══════════════════════════════════════════════
+  //  INITIAL FETCH — ทำงานเมื่อ fetchData เปลี่ยน
+  // ══════════════════════════════════════════════
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // ══════════════════════════════════════════════
+  //  REALTIME SUBSCRIPTION
+  // ══════════════════════════════════════════════
+  useEffect(() => {
+    const channel = supabase
+      .channel("topup_orders_realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",          // รับทั้ง INSERT, UPDATE, DELETE
+          schema: "public",
+          table: "topup_orders",
+        },
+        () => {
+          // มี order ใหม่หรืออัปเดต → fetch ใหม่ทั้งหมด
+          fetchData();
+        }
+      )
+      .subscribe((status) => {
+        // อัปเดต live indicator ตาม connection state
+        setIsLive(status === "SUBSCRIBED");
+      });
+
+    return () => {
+      supabase.removeChannel(channel); // cleanup เมื่อ unmount
+    };
+  }, [fetchData]); // re-subscribe เมื่อ sort เปลี่ยน
 
   // ── derived stats ──
   const total        = orders.length;
@@ -183,7 +220,7 @@ export default function TopupAnalyticsPage() {
     const matchSearch = !q
       || o.player_id?.toLowerCase().includes(q)
       || o.id.toLowerCase().includes(q)
-      || o.products?.name?.toLowerCase().includes(q)
+      || o.topup_products?.name?.toLowerCase().includes(q)
       || o.api_ref_id?.toLowerCase().includes(q);
     return matchStatus && matchSearch;
   });
@@ -208,8 +245,23 @@ export default function TopupAnalyticsPage() {
         <div className="relative z-10 px-6 py-5 flex items-center justify-between max-w-7xl mx-auto">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" style={{ boxShadow:"0 0 6px #67e8f9" }}/>
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color:"#bfdbfe" }}>Admin Dashboard</span>
+              {/* ── Live indicator ── */}
+              {isLive ? (
+                <>
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" style={{ boxShadow:"0 0 6px #67e8f9" }}/>
+                  <Radio size={10} style={{ color:"#67e8f9" }}/>
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color:"#bfdbfe" }}>
+                    LIVE
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-300"/>
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color:"#fde68a" }}>
+                    Connecting...
+                  </span>
+                </>
+              )}
             </div>
             <h1 className="text-xl font-extrabold text-white">Topup Analytics</h1>
             <p className="text-[11px] mt-0.5" style={{ color:"rgba(255,255,255,0.6)" }}>
@@ -412,15 +464,15 @@ export default function TopupAnalyticsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          {o.products?.image_url ? (
-                            <img src={o.products.image_url} className="w-5 h-5 rounded object-cover shrink-0"/>
+                          { o.topup_products?.image_url ? (
+                            <img src={ o.topup_products.image_url} className="w-5 h-5 rounded object-cover shrink-0"/>
                           ) : (
                             <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 text-[8px] font-black text-white" style={{ background:"linear-gradient(135deg,#2563eb,#06b6d4)" }}>
-                              {o.products?.name?.charAt(0) ?? "?"}
+                              { o.topup_products?.name?.charAt(0) ?? "?"}
                             </div>
                           )}
                           <span className="text-[12px] font-semibold truncate max-w-[100px]" style={{ color:"#0a1628" }}>
-                            {o.products?.name ?? "-"}
+                            { o.topup_products?.name ?? "-"}
                           </span>
                         </div>
                       </td>

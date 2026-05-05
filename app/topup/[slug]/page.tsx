@@ -1,5 +1,5 @@
 "use client";
-
+import { use } from "react"; // เพิ่ม use
 import { useState, useCallback, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -8,6 +8,7 @@ import {
   XCircle, Loader2, Star, User, CreditCard, Package, Crown
 } from "lucide-react";
 
+// ── Types (อยู่นอก component ถูกต้อง) ──
 type Step = "package" | "info" | "payment" | "status";
 
 interface PkgData {
@@ -26,7 +27,7 @@ interface PkgData {
 }
 
 // ══════════════════════════════════════════════
-//  COMPONENTS
+//  COMPONENTS (อยู่นอก component ถูกต้อง)
 // ══════════════════════════════════════════════
 
 function GridBg({ opacity = 0.04 }: { opacity?: number }) {
@@ -108,14 +109,12 @@ function PackageCard({
       onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${isBig ? "rgba(139,92,246,0.15)" : "rgba(37,99,235,0.15)"}` }}
       onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)" }}
     >
-      {/* Top accent bar */}
       <div className="h-[3px] w-full" style={{
         background: selected
           ? isBig ? "linear-gradient(90deg,#8b5cf6,#2563eb)" : "linear-gradient(90deg,#2563eb,#06b6d4)"
           : isBig ? "linear-gradient(90deg,#ddd6fe,#bfdbfe)" : "linear-gradient(90deg,#bfdbfe,#a5f3fc)"
       }} />
 
-      {/* Badge */}
       {(pkg.badge || isBestValue) && (
         <div className="absolute -top-0 right-2 text-[8px] font-black text-white px-2 py-0.5 rounded-b-lg leading-tight z-10"
           style={{
@@ -130,7 +129,6 @@ function PackageCard({
         </div>
       )}
 
-      {/* Selected checkmark */}
       {selected && (
         <div className="absolute top-2.5 left-2.5 w-4 h-4 rounded-full flex items-center justify-center z-10"
           style={{ background: isBig ? "linear-gradient(135deg,#8b5cf6,#2563eb)" : "linear-gradient(135deg,#2563eb,#06b6d4)" }}>
@@ -141,7 +139,6 @@ function PackageCard({
       )}
 
       <div className="px-2 pt-2 pb-0 flex flex-col items-center gap-1.5">
-        {/* Icon */}
         <div className="w-full h-16 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-105 overflow-hidden"
           style={selected
             ? { background: isBig ? "linear-gradient(135deg,#8b5cf6,#2563eb)" : "linear-gradient(135deg,#2563eb,#06b6d4)", boxShadow: `0 4px 14px ${isBig ? "rgba(139,92,246,0.4)" : "rgba(37,99,235,0.4)"}` }
@@ -156,7 +153,6 @@ function PackageCard({
           )}
         </div>
 
-        {/* Amount */}
         <div className="text-center">
           <div className="font-black leading-tight" style={{ fontSize: pkg.amount >= 1000 ? "13px" : "15px", color: "#0a1628" }}>
             {pkg.amount.toLocaleString()}
@@ -166,7 +162,6 @@ function PackageCard({
           </div>
         </div>
 
-        {/* Bonus */}
         {pkg.bonusAmount > 0 && (
           <div className="text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white"
             style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
@@ -174,13 +169,11 @@ function PackageCard({
           </div>
         )}
 
-        {/* Value per unit */}
         <div className="text-[8px] font-semibold px-1.5 py-0.5 rounded-full"
           style={{ background: isBig ? "rgba(139,92,246,0.08)" : "rgba(6,182,212,0.08)", color: isBig ? "#8b5cf6" : "#0891b2" }}>
           ฿{pkg.valuePerUnit}/{pkg.currencyLabel}
         </div>
 
-        {/* Price */}
         <div className="text-center mt-0.5">
           {pkg.originalPrice && (
             <div className="text-[9px] line-through" style={{ color: "#94a3b8" }}>฿{pkg.originalPrice.toLocaleString()}</div>
@@ -200,83 +193,12 @@ function PackageCard({
   );
 }
 
-function QRPayment({ amount, packageName, onConfirm }: { amount: number; packageName: string; onConfirm: () => void }) {
-  const [countdown, setCountdown] = useState(300);
-  useEffect(() => {
-    const t = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const mm = String(Math.floor(countdown / 60)).padStart(2, "0");
-  const ss = String(countdown % 60).padStart(2, "0");
-
-  return (
-    <div className="flex flex-col items-center gap-5">
-      <div className="w-full rounded-2xl p-4 text-center relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg,#1e40af 0%,#2563eb 50%,#0891b2 100%)", boxShadow: "0 4px 20px rgba(37,99,235,0.3)" }}>
-        <GridBg />
-        <div className="relative z-10">
-          <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.7)" }}>{packageName}</p>
-          <p className="text-4xl font-black text-white" style={{ textShadow: "0 0 20px rgba(6,182,212,0.6)" }}>฿{amount.toLocaleString()}</p>
-          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.6)" }}>ชำระผ่าน PromptPay</p>
-        </div>
-      </div>
-
-      <div className="relative">
-        <div className="p-5 bg-white rounded-2xl" style={{ boxShadow: "0 0 0 1px #bfdbfe,0 8px 32px rgba(37,99,235,0.12)" }}>
-          {([["top-2 left-2", "border-t-2 border-l-2"], ["top-2 right-2", "border-t-2 border-r-2"], ["bottom-2 left-2", "border-b-2 border-l-2"], ["bottom-2 right-2", "border-b-2 border-r-2"]] as const).map(([pos, border], i) => (
-            <div key={i} className={`absolute ${pos} w-5 h-5 ${border} rounded-sm`} style={{ borderColor: "#2563eb" }} />
-          ))}
-          <svg viewBox="0 0 100 100" fill="#0a1628" className="w-40 h-40">
-            <rect x="5" y="5" width="35" height="35" rx="4" fill="none" stroke="#0a1628" strokeWidth="4" />
-            <rect x="14" y="14" width="17" height="17" rx="2" />
-            <rect x="60" y="5" width="35" height="35" rx="4" fill="none" stroke="#0a1628" strokeWidth="4" />
-            <rect x="69" y="14" width="17" height="17" rx="2" />
-            <rect x="5" y="60" width="35" height="35" rx="4" fill="none" stroke="#0a1628" strokeWidth="4" />
-            <rect x="14" y="69" width="17" height="17" rx="2" />
-            <rect x="60" y="60" width="6" height="6" /><rect x="72" y="60" width="6" height="6" />
-            <rect x="84" y="60" width="11" height="6" /><rect x="60" y="72" width="6" height="6" />
-            <rect x="72" y="72" width="6" height="6" /><rect x="84" y="72" width="11" height="6" />
-            <rect x="60" y="84" width="6" height="11" /><rect x="72" y="84" width="6" height="6" />
-            <rect x="84" y="84" width="11" height="6" />
-          </svg>
-        </div>
-        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold px-4 py-1 rounded-full whitespace-nowrap"
-          style={{ background: "linear-gradient(90deg,#1e3a8a,#1e40af)", boxShadow: "0 2px 8px rgba(37,99,235,0.4)" }}>
-          PromptPay QR
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-full"
-        style={countdown < 60
-          ? { background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }
-          : { background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }}>
-        <Clock size={13} />หมดเวลาใน <span className="font-mono font-black tabular-nums">{mm}:{ss}</span>
-      </div>
-
-      <div className="w-full rounded-2xl p-4 space-y-2.5" style={{ background: "#f0f6ff", border: "1px solid #bfdbfe" }}>
-        <p className="text-xs font-bold mb-1" style={{ color: "#1e40af" }}>📱 วิธีสแกน QR</p>
-        {["เปิดแอปธนาคารหรือ Mobile Banking", "เลือก 'สแกน QR' หรือ 'PromptPay'", "สแกน QR แล้วยืนยันยอด"].map((s, i) => (
-          <div key={i} className="flex items-center gap-3 text-xs" style={{ color: "#1d4ed8" }}>
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[10px] shrink-0"
-              style={{ background: "linear-gradient(135deg,#2563eb,#06b6d4)" }}>{i + 1}</div>
-            {s}
-          </div>
-        ))}
-      </div>
-
-      <button onClick={onConfirm} className="w-full py-3.5 rounded-2xl text-white font-bold text-sm transition-all hover:brightness-110 active:scale-95"
-        style={{ background: "linear-gradient(135deg,#2563eb,#06b6d4)", boxShadow: "0 4px 20px rgba(37,99,235,0.35)" }}>
-        ✓ ยืนยันการชำระเงิน
-      </button>
-    </div>
-  );
-}
-
 // ══════════════════════════════════════════════
 //  MAIN PAGE
 // ══════════════════════════════════════════════
-
-export default function RovTopupPage() {
+export default function RovTopupPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
+  // ── State ทั้งหมดอยู่ใน component ──
   const [step,        setStep]        = useState<Step>("package");
   const [packages,    setPackages]    = useState<PkgData[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -285,6 +207,8 @@ export default function RovTopupPage() {
   const [playerId,    setPlayerId]    = useState("");
   const [serverId,    setServerId]    = useState("");
   const [error,       setError]       = useState("");
+  const [balance,     setBalance]     = useState(0);
+  const [submitting,  setSubmitting]  = useState(false);
 
   // ── Fetch packages ──
   useEffect(() => {
@@ -296,6 +220,14 @@ export default function RovTopupPage() {
       })
       .catch(() => setFetchError("โหลดแพ็กเกจไม่สำเร็จ กรุณารีเฟรช"))
       .finally(() => setLoading(false));
+  }, []);
+
+  // ── Fetch balance ──
+  useEffect(() => {
+    fetch("/api/user/balance")
+      .then(r => r.json())
+      .then(d => setBalance(d.balance ?? 0))
+      .catch(() => {});
   }, []);
 
   const normalPkgs  = packages.filter(p => p.tier === "normal");
@@ -316,9 +248,26 @@ export default function RovTopupPage() {
     setError(""); setStep("payment");
   }, [playerId]);
 
-  const handleConfirm = useCallback(() => {
-    setStep("status");
-  }, []);
+  const handleConfirm = useCallback(async () => {
+    if (!selectedPkg) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/topup/rov/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packageId: selectedPkg.id, playerId, serverId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); setSubmitting(false); return; }
+      setBalance(data.balanceAfter);
+      setStep("status");
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [selectedPkg, playerId, serverId]);
 
   return (
     <>
@@ -330,7 +279,6 @@ export default function RovTopupPage() {
           <GridBg />
           <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none" style={{ background: "rgba(6,182,212,0.25)", filter: "blur(48px)" }} />
           <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: "rgba(37,99,235,0.3)", filter: "blur(48px)" }} />
-
           <div className="relative z-10 mx-auto max-w-lg px-4 py-5 flex items-center gap-3">
             <a href="/topup">
               <button className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all hover:scale-110 active:scale-95"
@@ -386,7 +334,6 @@ export default function RovTopupPage() {
                     </div>
                   </div>
 
-                  {/* Loading */}
                   {loading && (
                     <div className="flex flex-col items-center gap-3 py-12">
                       <Loader2 size={28} className="animate-spin" style={{ color: "#2563eb" }} />
@@ -394,7 +341,6 @@ export default function RovTopupPage() {
                     </div>
                   )}
 
-                  {/* Fetch error */}
                   {!loading && fetchError && (
                     <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
                       style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
@@ -402,7 +348,6 @@ export default function RovTopupPage() {
                     </div>
                   )}
 
-                  {/* แพ็กหลัก */}
                   {!loading && !fetchError && normalPkgs.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2.5">
@@ -421,7 +366,6 @@ export default function RovTopupPage() {
                     </div>
                   )}
 
-                  {/* แพ็กใหญ่ */}
                   {!loading && !fetchError && bigPkgs.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2.5">
@@ -440,7 +384,6 @@ export default function RovTopupPage() {
                     </div>
                   )}
 
-                  {/* Selected summary */}
                   {selectedPkg ? (
                     <div className="flex items-center justify-between px-4 py-3 rounded-2xl text-sm"
                       style={{ background: "linear-gradient(135deg,rgba(37,99,235,0.07),rgba(6,182,212,0.07))", border: "1px solid #bfdbfe" }}>
@@ -541,19 +484,71 @@ export default function RovTopupPage() {
                 </div>
               )}
 
-              {/* ══ STEP 3: Payment ══ */}
+              {/* ══ STEP 3: Payment (หักจาก Wallet) ══ */}
               {step === "payment" && selectedPkg && (
                 <div className="space-y-4">
                   <div>
-                    <h2 className="font-extrabold text-xl mb-0.5" style={{ color: "#0a1628" }}>ชำระเงิน</h2>
+                    <h2 className="font-extrabold text-xl mb-0.5" style={{ color: "#0a1628" }}>ยืนยันการเติม</h2>
                     <p className="text-sm" style={{ color: "#1d4ed8" }}>
                       {selectedPkg.amount.toLocaleString()} {selectedPkg.currencyLabel} · ID: <span className="font-mono font-bold">{playerId}</span>
                     </p>
                   </div>
-                  <QRPayment
-                    amount={selectedPkg.price}
-                    packageName={`ROV ${selectedPkg.amount.toLocaleString()} ${selectedPkg.currencyLabel}`}
-                    onConfirm={handleConfirm} />
+
+                  {/* Wallet summary */}
+                  <div className="rounded-2xl p-4" style={{ background: "#f0f6ff", border: "1px solid #bfdbfe" }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold" style={{ color: "#1d4ed8" }}>ยอดเงินในกระเป๋า</span>
+                      <span className="text-lg font-black" style={{ color: "#2563eb" }}>฿{balance.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-sm font-semibold" style={{ color: "#1d4ed8" }}>ราคาแพ็กเกจ</span>
+                      <span className="text-lg font-black" style={{ color: "#dc2626" }}>- ฿{selectedPkg.price.toLocaleString()}</span>
+                    </div>
+                    <div className="h-px my-3" style={{ background: "#bfdbfe" }} />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold" style={{ color: "#1e40af" }}>คงเหลือหลังเติม</span>
+                      <span className="text-lg font-black" style={{ color: balance >= selectedPkg.price ? "#16a34a" : "#dc2626" }}>
+                        ฿{(balance - selectedPkg.price).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ยอดไม่พอ */}
+                  {balance < selectedPkg.price && (
+                    <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+                      style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
+                      <XCircle size={15} className="shrink-0" />
+                      ยอดเงินไม่เพียงพอ ต้องเติมอีก ฿{(selectedPkg.price - balance).toLocaleString()}
+                      <a href="/deposit" className="ml-auto font-bold underline whitespace-nowrap">เติมเงิน</a>
+                    </div>
+                  )}
+
+                  {/* สรุปออร์เดอร์ */}
+                  <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #bfdbfe" }}>
+                    <div className="px-4 py-2 text-[11px] font-bold text-white" style={{ background: "linear-gradient(135deg,#1e40af,#0891b2)" }}>รายละเอียด</div>
+                    {[
+                      { label: "เกม",      value: "ROV — Arena of Valor" },
+                      { label: "แพ็กเกจ", value: `${selectedPkg.amount.toLocaleString()} ${selectedPkg.currencyLabel}` },
+                      { label: "Player ID", value: playerId },
+                      ...(serverId ? [{ label: "Server ID", value: serverId }] : []),
+                      { label: "ราคา",    value: `฿${selectedPkg.price.toLocaleString()}` },
+                    ].map((row, i) => (
+                      <div key={i} className="flex justify-between items-center px-4 py-2.5 text-sm bg-white border-t first:border-t-0"
+                        style={{ borderColor: "#e0f0ff" }}>
+                        <span style={{ color: "#1d4ed8" }}>{row.label}</span>
+                        <span className="font-bold" style={{ color: "#0a1628" }}>{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button onClick={handleConfirm} disabled={balance < selectedPkg.price || submitting}
+                    className="w-full py-3.5 rounded-2xl text-white font-bold text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{ background: "linear-gradient(135deg,#2563eb,#06b6d4)", boxShadow: "0 4px 20px rgba(37,99,235,0.35)" }}>
+                    {submitting
+                      ? <><Loader2 size={16} className="animate-spin" /> กำลังดำเนินการ...</>
+                      : `✓ ยืนยัน หักเงิน ฿${selectedPkg.price.toLocaleString()}`}
+                  </button>
+
                   <button onClick={() => setStep("info")} className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-secondary/50"
                     style={{ border: "1px solid #bfdbfe", color: "#1d4ed8" }}>← ย้อนกลับ</button>
                 </div>
@@ -573,12 +568,14 @@ export default function RovTopupPage() {
                   <div className="w-full rounded-2xl overflow-hidden" style={{ border: "1px solid #bfdbfe" }}>
                     <div className="px-4 py-2 text-[11px] font-bold text-white" style={{ background: "linear-gradient(135deg,#1e40af,#0891b2)" }}>รายละเอียด</div>
                     {[
-                      { label: "เกม", value: "ROV — Arena of Valor" },
-                      { label: "จำนวน", value: `${selectedPkg?.amount.toLocaleString()} ${selectedPkg?.currencyLabel}` },
+                      { label: "เกม",      value: "ROV — Arena of Valor" },
+                      { label: "จำนวน",   value: `${selectedPkg?.amount.toLocaleString()} ${selectedPkg?.currencyLabel}` },
                       { label: "Player ID", value: playerId },
                       { label: "ยอดชำระ", value: `฿${selectedPkg?.price.toLocaleString()}` },
+                      { label: "คงเหลือ", value: `฿${balance.toLocaleString()}` },
                     ].map((row, i) => (
-                      <div key={i} className="flex justify-between items-center px-4 py-2.5 text-sm bg-white border-t" style={{ borderColor: "#e0f0ff" }}>
+                      <div key={i} className="flex justify-between items-center px-4 py-2.5 text-sm bg-white border-t first:border-t-0"
+                        style={{ borderColor: "#e0f0ff" }}>
                         <span style={{ color: "#1d4ed8" }}>{row.label}</span>
                         <span className="font-bold" style={{ color: "#0a1628" }}>{row.value}</span>
                       </div>

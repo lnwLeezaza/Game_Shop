@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 import type {
   User,
   Product,
@@ -19,17 +19,7 @@ import type {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-declare global {
-  var __supabase: ReturnType<typeof createClient> | undefined
-}
-
-export const supabase = globalThis.__supabase ?? createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: true, autoRefreshToken: true },
-})
-
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.__supabase = supabase
-}
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
 
 // ==================== Auth API ====================
 export const authAPI = {
