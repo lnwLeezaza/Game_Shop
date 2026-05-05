@@ -12,7 +12,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-
 // ─── ENV ที่ต้องตั้งใน .env.local ──────────────────────────
 // WONDD_CALLBACK_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  (random 32+ chars)
 // WONDD_ALLOWED_IPS=1.2.3.4,5.6.7.8   (ขอ IP จาก WONDD support)
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  // 3. Parse body
+  // 3. Parse body — ป้องกัน malformed JSON จาก WONDD
   let body: { orderid?: string; status?: string; remark?: string }
   try {
     body = await req.json()
@@ -85,7 +84,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  // 5. หา order ใน DB ด้วย wondd_orderid
+  // 5. ตรวจ status value ตรงกับ WONDD doc
+  const validStatuses = ["process", "complete", "fail"]
+  if (!validStatuses.includes(status)) {
+    console.warn("[WONDD Callback] Unknown status value:", status)
+    return NextResponse.json({ received: true })
+  }
+
+  // 6. หา order ใน DB ด้วย wondd_orderid
   // Next.js 15+: cookies() ต้อง await
   const cookieStore = await cookies()
 
@@ -107,26 +113,30 @@ export async function POST(req: NextRequest) {
 
   if (error || !order) {
     console.warn("[WONDD Callback] Order not found for wondd_orderid:", orderid)
+    // คืน 200 ไม่ให้ WONDD retry loop ต่อเนื่อง
     return NextResponse.json({ received: true })
   }
 
-  // 6. Idempotency — ถ้า order เสร็จแล้ว ไม่ทำซ้ำ
+  // 7. Idempotency — ถ้า order เสร็จแล้ว ไม่ทำซ้ำ
   if (order.status === "completed" || order.status === "refunded") {
     console.log("[WONDD Callback] Order already settled:", order.id, order.status)
     return NextResponse.json({ received: true })
   }
 
-  // 7. ประมวลผลตาม status ที่ WONDD ส่งมา
+  // 8. ประมวลผลตาม status ที่ WONDD ส่งมา
   try {
     if (status === "complete") {
+      // ปล่อย escrow → โอนเงินให้ seller
+      // ส่ง p_buyer_id = "" เพื่อบอก SQL function ว่าเป็น system call
       const { error: rpcErr } = await supabase.rpc("confirm_delivery", {
         p_order_id: order.id,
-        p_buyer_id: order.buyer_id,
+        p_buyer_id: "",
       })
       if (rpcErr) throw rpcErr
       console.log("[WONDD Callback] confirm_delivery success for order:", order.id)
 
     } else if (status === "fail") {
+      // Topup ล้มเหลว → คืนเงิน buyer
       const { error: rpcErr } = await supabase.rpc("admin_refund_order", {
         p_order_id: order.id,
       })
@@ -134,11 +144,12 @@ export async function POST(req: NextRequest) {
       console.log("[WONDD Callback] refund success for order:", order.id, "remark:", remark)
 
     } else if (status === "process") {
+      // WONDD กำลังดำเนินการ — แค่ log ไว้
       console.log("[WONDD Callback] Order still processing:", order.id)
     }
   } catch (err) {
     console.error("[WONDD Callback] RPC error for order:", order.id, err)
-    // คืน 500 เพื่อให้ WONDD retry
+    // คืน 500 เพื่อให้ WONDD retry อีกครั้ง (WONDD จะ retry ถ้าได้ non-2xx)
     return NextResponse.json({ error: "internal error" }, { status: 500 })
   }
 

@@ -13,7 +13,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-
 const WONDD_BASE = "https://www.wondd.com/member/bot-game.php"
 const WONDD_USER = process.env.WONDD_USERNAME ?? ""
 const WONDD_PASS = process.env.WONDD_PASSWORD ?? ""
@@ -23,17 +22,14 @@ const PROXY_URL  = process.env.WONDD_PROXY_URL ?? ""
 // WONDD API doc มี JSON ที่ขาด comma หลายจุด เช่น:
 //   "gameid": "123" "packcode": "R00012"   ← ขาด comma
 //   "remark":""  "trascationstatus":"complete"  ← ขาด comma
-//
-// ในกรณีที่ WONDD ส่ง JSON จริงผิดด้วย ต้องพยายาม repair ก่อน parse
 function safeParseWONDD(text: string): Record<string, unknown> | null {
-  // ลอง parse ปกติก่อน
   try {
     return JSON.parse(text)
   } catch {
-    // ลอง repair: เติม comma ระหว่าง closing quote + whitespace + opening quote
+    // repair: เติม comma ระหว่าง closing quote + whitespace + opening quote
     const repaired = text
-      .replace(/(["'])\s*(")/g, "$1, $2")   // "value" "key" → "value", "key"
-      .replace(/}(\s*){/g, "}, {")           // }{ → }, {
+      .replace(/(["'])\s*(")/g, "$1, $2")
+      .replace(/}(\s*){/g, "}, {")
     try {
       console.warn("[WONDD] Used JSON repair for malformed response")
       return JSON.parse(repaired)
@@ -46,23 +42,21 @@ function safeParseWONDD(text: string): Record<string, unknown> | null {
 
 // ── Type สำหรับ checkstatus response ─────────────────────────
 interface CheckStatusResponse {
-  status:              number
-  errorcode:           string
-  errordetail:         string
-  orderid?:            string
-  createdate?:         string
-  gameid?:             string
-  packcode?:           string
-  packname?:           string
-  point?:              number
-  amount?:             number
-  discount?:           number
-  netamount?:          number
-  remark?:             string
-  // WONDD สะกดผิด: "trascationstatus" (ขาด n)
-  trascationstatus?:   string   // "process" | "complete" | "fail"
-  // normalize แล้วเก็บที่นี่
-  transactionStatus?:  string
+  status:             number
+  errorcode:          string
+  errordetail:        string
+  orderid?:           string
+  createdate?:        string
+  gameid?:            string
+  packcode?:          string
+  packname?:          string
+  point?:             number
+  amount?:            number
+  discount?:          number
+  netamount?:         number
+  remark?:            string
+  trascationstatus?:  string   // WONDD สะกดผิด (ขาด n)
+  transactionStatus?: string   // normalized
 }
 
 // ── Normalize: ไม่ mutate raw, return object ใหม่ ────────────
@@ -71,7 +65,7 @@ function normalizeCheckStatus(raw: Record<string, unknown>): CheckStatusResponse
   return {
     ...base,
     transactionStatus: (raw["trascationstatus"] as string) ?? "",
-  } satisfies CheckStatusResponse
+  }
 }
 
 // ── เรียก WONDD checkstatus ──────────────────────────────────
@@ -105,7 +99,7 @@ async function fetchCheckStatus(wonddOrderId: string): Promise<CheckStatusRespon
 // ป้องกัน client poll ถี่เกินไปจนทำให้ WONDD block IP
 // production ควรใช้ Redis แทน
 const pollCooldown = new Map<string, number>()
-const COOLDOWN_MS = 3_000  // ขั้นต่ำ 3 วินาทีต่อ orderId
+const COOLDOWN_MS  = 3_000
 
 function isRateLimited(orderId: string): boolean {
   const last = pollCooldown.get(orderId) ?? 0
@@ -130,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
   )
 
-  // ตรวจ auth
+  // 1. ตรวจ auth
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -143,12 +137,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing internalOrderId" }, { status: 400 })
   }
 
-  // Rate limit ต่อ orderId
+  // 2. Rate limit ต่อ orderId
   if (isRateLimited(internalOrderId)) {
-    return NextResponse.json({ error: "Too many requests, please wait" }, { status: 429 })
+    return NextResponse.json(
+      { error: "Too many requests, please wait a moment" },
+      { status: 429 }
+    )
   }
 
-  // ดึง order
+  // 3. ดึง order — ตรวจ ownership
   const { data: order } = await supabase
     .from("orders")
     .select("id, status, buyer_id, wondd_orderid")
@@ -160,6 +157,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 })
   }
 
+  // 4. ยังไม่ได้ส่ง topup ไปเลย
   if (!order.wondd_orderid) {
     return NextResponse.json({
       transactionStatus: "not_sent",
@@ -167,7 +165,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // ถ้าเสร็จแล้ว ไม่ต้องเช็คซ้ำ
+  // 5. เสร็จแล้ว ไม่ต้องเช็คซ้ำ
   if (order.status === "completed" || order.status === "refunded") {
     return NextResponse.json({
       transactionStatus: order.status,
@@ -175,7 +173,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // เรียก WONDD checkstatus
+  // 6. เรียก WONDD checkstatus
   let wonddStatus: CheckStatusResponse
   try {
     wonddStatus = await fetchCheckStatus(order.wondd_orderid)
@@ -193,11 +191,12 @@ export async function POST(req: NextRequest) {
     }, { status: 422 })
   }
 
-  // ถ้า WONDD บอก complete แต่ callback ยังไม่มา → ปล่อย escrow เอง
+  // 7. WONDD บอก complete แต่ callback ยังไม่มา → ปล่อย escrow เอง
+  //    ส่ง p_buyer_id = '' เพื่อบอก function ว่าเป็น system call
   if (wonddStatus.transactionStatus === "complete" && order.status !== "completed") {
     const { error: rpcErr } = await supabase.rpc("confirm_delivery", {
       p_order_id: order.id,
-      p_buyer_id: order.buyer_id,
+      p_buyer_id: "",
     })
     if (rpcErr) {
       console.error("[checkstatus] confirm_delivery failed:", rpcErr)
@@ -209,7 +208,7 @@ export async function POST(req: NextRequest) {
     console.log("[checkstatus] Manually confirmed delivery for order:", order.id)
   }
 
-  // ถ้า WONDD บอก fail → คืนเงิน
+  // 8. WONDD บอก fail → คืนเงิน
   if (wonddStatus.transactionStatus === "fail" && order.status === "processing") {
     const { error: refundErr } = await supabase.rpc("admin_refund_order", {
       p_order_id: order.id,
@@ -225,8 +224,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
-    transactionStatus: wonddStatus.transactionStatus,   // normalized
-    rawStatus:         wonddStatus.trascationstatus,    // typo key จาก WONDD (reference)
+    transactionStatus: wonddStatus.transactionStatus,  // normalized
+    rawStatus:         wonddStatus.trascationstatus,   // typo key จาก WONDD (reference)
     wonddOrderId:      wonddStatus.orderid,
     packname:          wonddStatus.packname,
     point:             wonddStatus.point,

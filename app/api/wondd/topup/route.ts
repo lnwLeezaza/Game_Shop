@@ -15,7 +15,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-
 // ─── ENV ──────────────────────────────────────────────────────
 // WONDD_USERNAME=your_username
 // WONDD_PASSWORD=your_password
@@ -112,7 +111,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
   }
 
-  // 2. ดึง order จาก DB ตรวจสอบว่า order เป็นของ user นี้จริง
+  // validate servicecode ตรงกับ WONDD doc
+  const validServicecodes = ["rov", "freefire", "undawn", "blackcover"]
+  if (!validServicecodes.includes(servicecode)) {
+    return NextResponse.json(
+      { error: `Invalid servicecode. Must be one of: ${validServicecodes.join(", ")}` },
+      { status: 400 }
+    )
+  }
+
+  // 2. ดึง order จาก DB — ตรวจว่า order เป็นของ user นี้จริง
   const { data: order, error: orderErr } = await supabase
     .from("orders")
     .select("id, status, buyer_id, wondd_orderid")
@@ -131,9 +139,11 @@ export async function POST(req: NextRequest) {
       success:      true,
       wonddOrderId: order.wondd_orderid,
       alreadySent:  true,
+      message:      "Topup already submitted. Use checkstatus to poll result.",
     })
   }
 
+  // 4. ตรวจ status — ต้องเป็น paid เท่านั้น
   if (order.status !== "paid") {
     return NextResponse.json(
       { error: `Order status is '${order.status}', expected 'paid'` },
@@ -141,7 +151,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 4. เรียก WONDD API
+  // 5. เรียก WONDD API
   let wonddRes: WONDDResponse
   try {
     wonddRes = await callWONDD({
@@ -158,7 +168,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 5. ตรวจ E09 โดยเฉพาะ
+  // 6. ตรวจ E09 โดยเฉพาะ — IP ยังไม่ได้ whitelist
   if (wonddRes.errorcode === "E09") {
     console.error("[WONDD Topup] IP not whitelisted — check WONDD_PROXY_URL or Vercel Static IP")
     return NextResponse.json(
@@ -167,7 +177,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 6. ตรวจ error อื่นๆ
+  // 7. ตรวจ error อื่นๆ
   if (wonddRes.errorcode !== "00") {
     console.error("[WONDD Topup] API error:", wonddRes.errorcode, wonddRes.errordetail)
     return NextResponse.json(
@@ -176,19 +186,26 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 7. บันทึก wondd_orderid ลง DB ทันที
+  // 8. บันทึก wondd_orderid + wondd fields ลง DB ทันที
+  //    ก่อน return เพื่อป้องกัน retry ส่ง topup ซ้ำ
   if (wonddRes.orderid) {
     const { error: updateErr } = await supabase
       .from("orders")
       .update({
-        wondd_orderid: wonddRes.orderid,
-        status:        "processing",
-        updated_at:    new Date().toISOString(),
+        wondd_orderid:     wonddRes.orderid,
+        wondd_servicecode: servicecode,
+        wondd_packcode:    packcode,
+        wondd_gameid:      gameid,
+        status:            "processing",
+        updated_at:        new Date().toISOString(),
       })
       .eq("id", internalOrderId)
 
     if (updateErr) {
-      console.error("[WONDD Topup] Failed to save wondd_orderid:", updateErr)
+      // WONDD topup สำเร็จแล้ว แต่บันทึก DB ไม่ได้
+      // log ไว้ให้ admin ตรวจสอบ แต่ยังคืน success เพราะ topup จริงแล้ว
+      console.error("[WONDD Topup] CRITICAL: Failed to save wondd_orderid to DB:", updateErr)
+      console.error("[WONDD Topup] Manual fix needed — orderId:", internalOrderId, "wonddOrderId:", wonddRes.orderid)
     }
   }
 
