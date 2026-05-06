@@ -30,6 +30,10 @@ interface WONDDBalanceResponse {
 }
 
 // ── เรียก WONDD balance ──────────────────────────────────────
+
+console.log("WONDD_USER:", WONDD_USER)
+console.log("WONDD_PASS:", WONDD_PASS)
+
 async function fetchWONDDBalance(): Promise<WONDDBalanceResponse> {
   const formData = new URLSearchParams({
     method:   "balance",

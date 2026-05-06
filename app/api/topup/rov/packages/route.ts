@@ -3,11 +3,14 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
-// ✅ ใช้ admin client จากไฟล์กลาง (หรือจะแยกไปไว้ lib/supabase/admin.ts ก็ได้)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+const WONDD_URL  = 'https://www.wondd.com/member/bot-game.php'
+const WONDD_USER = process.env.WONDD_USERNAME!
+const WONDD_PASS = process.env.WONDD_PASSWORD!
 
 async function getSupabaseUser() {
   const cookieStore = await cookies()
@@ -25,6 +28,32 @@ async function getSupabaseUser() {
       },
     }
   )
+}
+
+// ── เรียก WonDD Topup ─────────────────────────────────────────
+async function callWonddTopup(packcode: string, gameid: string) {
+  const body = new URLSearchParams({
+    method:      'topup',
+    username:    WONDD_USER,
+    password:    WONDD_PASS,
+    servicecode: 'rov',
+    packcode,
+    gameid,
+  })
+
+  const res = await fetch(WONDD_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    body.toString(),
+    signal:  AbortSignal.timeout(20_000),
+  })
+
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('WonDD returned invalid JSON: ' + text)
+  }
 }
 
 export async function GET() {
@@ -65,7 +94,6 @@ export async function POST(req: Request) {
   if (!packageId || !playerId)
     return NextResponse.json({ error: 'ข้อมูลไม่ครบ' }, { status: 400 })
 
-  // ✅ validate รูปแบบ Player ID
   if (!/^\d{8,12}$/.test(playerId))
     return NextResponse.json({ error: 'Player ID ไม่ถูกต้อง' }, { status: 400 })
 
@@ -99,7 +127,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: 500 })
   }
 
-  // 5. ✅ บันทึก order — ถ้าล้มเหลวให้คืนเงินทันที
+  // 5. บันทึก order สถานะ pending
   const { data: order, error: insertError } = await supabaseAdmin
     .from('topup_orders')
     .insert({
@@ -117,7 +145,7 @@ export async function POST(req: Request) {
     .single()
 
   if (insertError) {
-    // ✅ Rollback — คืนเงินถ้าบันทึก order ไม่สำเร็จ
+    // Rollback คืนเงิน
     await supabaseAdmin.rpc('refund_balance', {
       p_user_id:     user.id,
       p_amount:      pkg.price,
@@ -127,10 +155,62 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'บันทึก order ไม่สำเร็จ' }, { status: 500 })
   }
 
-  // 6. ✅ ส่งผลลัพธ์พร้อม orderId
+  // 6. เรียก WonDD API
+  let wonddRes: any
+  try {
+    wonddRes = await callWonddTopup(pkg.api_sku, playerId)
+  } catch (err) {
+    // WonDD error → อัปเดต order เป็น failed แต่ไม่คืนเงินอัตโนมัติ (รอ admin ตรวจ)
+    await supabaseAdmin
+      .from('topup_orders')
+      .update({ status: 'failed', remark: String(err) })
+      .eq('id', order.id)
+
+    return NextResponse.json({
+      error:   'ติดต่อ WonDD ไม่สำเร็จ กรุณาติดต่อ admin',
+      orderId: order.id,
+    }, { status: 502 })
+  }
+
+  // 7. เช็ค WonDD error code
+  if (wonddRes.errorcode !== '00') {
+    // WonDD ปฏิเสธ → คืนเงินทันที
+    await supabaseAdmin.rpc('refund_balance', {
+      p_user_id:     user.id,
+      p_amount:      pkg.price,
+      p_description: `คืนเงิน: WonDD error ${wonddRes.errorcode}`,
+      p_reference:   pkg.api_sku,
+    })
+
+    await supabaseAdmin
+      .from('topup_orders')
+      .update({
+        status: 'failed',
+        remark: `WonDD: ${wonddRes.errorcode} - ${wonddRes.errordetail}`,
+      })
+      .eq('id', order.id)
+
+    return NextResponse.json({
+      error:   wonddRes.errordetail ?? 'WonDD ปฏิเสธคำสั่ง',
+      code:    wonddRes.errorcode,
+      orderId: order.id,
+    }, { status: 422 })
+  }
+
+  // 8. สำเร็จ → อัปเดต order เป็น completed
+  await supabaseAdmin
+    .from('topup_orders')
+    .update({
+      status:         'completed',
+      wondd_order_id: wonddRes.orderid,
+      remark:         `WonDD orderid: ${wonddRes.orderid}`,
+    })
+    .eq('id', order.id)
+
   return NextResponse.json({
     success:      true,
     orderId:      order.id,
+    wonddOrderId: wonddRes.orderid,
     balanceAfter: result.balance_after,
     package:      pkg.name,
     playerId,
