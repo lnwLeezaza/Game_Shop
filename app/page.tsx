@@ -12,7 +12,7 @@ import { supabase } from '@/lib/supabase'
 type Category = { id: string; name: string; slug: string; icon?: string }
 type Product = {
   id: string
-  name: string
+  title: string
   price: number
   original_price?: number
   image_url?: string
@@ -635,7 +635,7 @@ function ProductCard({ product }: { product: Product }) {
           {product.image_url ? (
             <img
               src={product.image_url}
-              alt={product.name}
+              alt={product.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
@@ -650,7 +650,7 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
         <div className="p-3">
-          <p className="text-[12px] font-semibold text-[#1a1028] line-clamp-2 mb-1.5 leading-snug">{product.name}</p>
+          <p className="text-[12px] font-semibold text-[#1a1028] line-clamp-2 mb-1.5 leading-snug">{product.title}</p>
           <div className="flex items-baseline gap-1.5">
             <span className="text-[14px] font-extrabold text-primary">฿{product.price.toLocaleString()}</span>
             {product.original_price && product.original_price > product.price && (
@@ -685,12 +685,12 @@ export default function HomePage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: cats } = await supabase.from('categories').select('*').order('name')
+        const { data: cats } = await supabase.from('categories').select('id, name, slug, icon').order('name')
         if (cats) setCategories(cats)
         const { data: sale } = await supabase
           .from('products')
           .select('*, categories(name, slug)')
-          .eq('is_on_sale', true)
+          .eq('is_on_sale', true)  
           .order('discount_percent', { ascending: false })
           .limit(8)
         if (sale) setSaleProducts(sale)
