@@ -11,7 +11,6 @@ import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { useAuthStore } from '@/lib/store'
 import { useLocale } from '@/hooks/use-locale'
-import { cn } from '@/lib/utils'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -45,28 +44,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Sidebar */}
         <aside
           className="hidden w-64 shrink-0 border-r lg:block"
-          style={{ borderColor: '#1a1a2e', background: '#08080e' }}
+          style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
         >
           <div style={{ position: 'sticky', top: '64px', padding: '20px 16px' }}>
             {/* User info */}
             <div style={{
               padding: '14px', marginBottom: '20px',
-              background: '#0f0f1a', border: '1px solid #1a1a2e',
+              background: 'var(--secondary)', border: '1px solid var(--border)',
               borderRadius: '10px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{
                   width: '36px', height: '36px', borderRadius: '8px',
-                  background: 'linear-gradient(135deg,#7c3aed,#2563eb)',
+                  background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   <User style={{ width: '18px', height: '18px', color: 'white' }} />
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#f1f5f9', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{
+                    fontSize: '13px', fontWeight: 'bold', color: 'var(--foreground)',
+                    fontFamily: 'monospace', overflow: 'hidden',
+                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
                     {user.displayName || user.username}
                   </div>
-                  <div style={{ fontSize: '10px', fontFamily: 'monospace', color: user.role === 'seller' ? '#60a5fa' : '#4ade80', marginTop: '2px' }}>
+                  <div style={{
+                    fontSize: '10px', fontFamily: 'monospace', marginTop: '2px',
+                    color: user.role === 'seller' ? 'var(--primary)' : '#16a34a',
+                  }}>
                     {user.role === 'seller' ? (th ? '🏪 ผู้ขาย' : '🏪 Seller') : (th ? '👤 ผู้ซื้อ' : '👤 Buyer')}
                   </div>
                 </div>
@@ -76,9 +82,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {isSeller && (
               <Link href="/dashboard/products/new" style={{ display: 'block', marginBottom: '16px', textDecoration: 'none' }}>
                 <div style={{
-                  padding: '10px 14px', background: 'linear-gradient(135deg,#7c3aed,#2563eb)',
+                  padding: '10px 14px',
+                  background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
                   borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px',
-                  cursor: 'pointer', boxShadow: '0 0 16px rgba(139,92,246,0.3)',
+                  cursor: 'pointer', boxShadow: '0 0 16px rgba(37,99,235,0.25)',
                 }}>
                   <Plus style={{ width: '16px', height: '16px', color: 'white' }} />
                   <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'white', fontFamily: 'monospace' }}>
@@ -99,9 +106,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '9px 12px', borderRadius: '8px', textDecoration: 'none',
                       fontSize: '13px', fontFamily: 'monospace', transition: 'all 0.15s',
-                      background: isActive ? 'rgba(139,92,246,0.15)' : 'transparent',
-                      color: isActive ? '#a78bfa' : '#64748b',
-                      border: `1px solid ${isActive ? 'rgba(139,92,246,0.3)' : 'transparent'}`,
+                      background: isActive ? 'rgba(37,99,235,0.10)' : 'transparent',
+                      color: isActive ? 'var(--primary)' : 'var(--muted-foreground)',
+                      border: `1px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
+                      fontWeight: isActive ? 700 : 400,
                     }}
                   >
                     <item.icon style={{ width: '15px', height: '15px' }} />
@@ -111,15 +119,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               })}
             </nav>
 
-            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #1a1a2e' }}>
+            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
               <button
                 onClick={() => { logout(); router.push('/') }}
                 style={{
                   width: '100%', padding: '9px 12px', background: 'none',
                   border: '1px solid transparent', borderRadius: '8px',
                   display: 'flex', alignItems: 'center', gap: '10px',
-                  fontSize: '13px', color: '#ef4444', fontFamily: 'monospace',
+                  fontSize: '13px', color: 'var(--destructive)', fontFamily: 'monospace',
                   cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)'
+                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.25)'
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'none'
+                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'
                 }}
               >
                 <LogOut style={{ width: '15px', height: '15px' }} />
@@ -130,7 +146,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </aside>
 
         {/* Main */}
-        <main className="flex-1" style={{ background: '#050508' }}>
+        <main className="flex-1" style={{ background: 'var(--background)' }}>
           <div style={{ maxWidth: '1024px', margin: '0 auto', padding: '24px 16px' }}>
             {children}
           </div>

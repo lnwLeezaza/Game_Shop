@@ -12,29 +12,9 @@ const WONDD_URL  = 'https://www.wondd.com/member/bot-game.php'
 const WONDD_USER = process.env.WONDD_USERNAME!
 const WONDD_PASS = process.env.WONDD_PASSWORD!
 
-async function callWonddTopup(packcode: string, gameid: string) {
-  const body = new URLSearchParams({
-    method:      'topup',
-    username:    WONDD_USER,
-    password:    WONDD_PASS,
-    servicecode: 'rov',
-    packcode,
-    gameid,
-  })
-  const res = await fetch(WONDD_URL, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body:    body.toString(),
-    signal:  AbortSignal.timeout(20_000),
-  })
-  const text = await res.text()
-  try { return JSON.parse(text) }
-  catch { throw new Error('WonDD invalid JSON: ' + text) }
-}
-
-export async function POST(req: Request) {
+async function getSupabaseUser() {
   const cookieStore = await cookies()
-  const supabaseUser = createServerClient(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -48,17 +28,68 @@ export async function POST(req: Request) {
       },
     }
   )
+}
 
-  // 1. ตรวจ user
+async function callWonddTopup(packcode: string, gameid: string) {
+  const body = new URLSearchParams({
+    method:      'topup',
+    username:    WONDD_USER,
+    password:    WONDD_PASS,
+    servicecode: 'deltaforce',
+    packcode,
+    gameid,
+  })
+  const res = await fetch(WONDD_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    body.toString(),
+    signal:  AbortSignal.timeout(20_000),
+  })
+  const text = await res.text()
+  try { return JSON.parse(text) }
+  catch { throw new Error('WonDD returned invalid JSON: ' + text) }
+}
+
+export async function GET() {
+  const { data: packages, error } = await supabaseAdmin
+    .from('topup_packages')
+    .select('*')
+    .eq('is_active', true)
+    .eq('game_code', 'deltaforce')
+    .order('price', { ascending: true })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const mapped = (packages ?? []).map(p => ({
+    id:            p.id,
+    sku:           p.api_sku,
+    amount:        p.diamond_amount,
+    label:         p.name,
+    currencyLabel: p.currency_label,
+    price:         p.price,
+    originalPrice: p.original_price ?? null,
+    bonusAmount:   p.bonus_amount ?? 0,
+    tier:          p.tier ?? 'normal',
+    badge:         p.badge ?? null,
+    badgeColor:    p.badge_color ?? null,
+    valuePerUnit:  +(p.price / p.diamond_amount).toFixed(4),
+  }))
+
+  return NextResponse.json({ packages: mapped })
+}
+
+export async function POST(req: Request) {
+  const supabaseUser = await getSupabaseUser()
   const { data: { user } } = await supabaseUser.auth.getUser()
   if (!user) return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 })
 
-  // 2. ตรวจ input
   const { packageId, playerId, serverId } = await req.json()
   if (!packageId || !playerId)
     return NextResponse.json({ error: 'ข้อมูลไม่ครบ' }, { status: 400 })
 
-  // 3. ดึงแพ็กเกจ
+  if (!/^\d{6,20}$/.test(playerId))
+    return NextResponse.json({ error: 'Player ID ไม่ถูกต้อง' }, { status: 400 })
+
   const { data: pkg, error: pkgError } = await supabaseAdmin
     .from('topup_packages')
     .select('id, name, price, diamond_amount, currency_label, api_sku, product_id')
@@ -69,11 +100,10 @@ export async function POST(req: Request) {
   if (pkgError || !pkg)
     return NextResponse.json({ error: 'ไม่พบแพ็กเกจ' }, { status: 404 })
 
-  // 4. ตัดเงิน
   const { data: result, error: rpcError } = await supabaseAdmin.rpc('deduct_balance', {
     p_user_id:     user.id,
     p_amount:      pkg.price,
-    p_description: `เติม ROV ${pkg.name} Player ID: ${playerId}`,
+    p_description: 'เติม Delta Force ' + pkg.name + ' Player ID: ' + playerId,
     p_reference:   pkg.api_sku,
   })
 
@@ -88,25 +118,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: 500 })
   }
 
-  // 5. บันทึก order สถานะ pending ก่อน
   const { data: order, error: insertError } = await supabaseAdmin
     .from('topup_orders')
     .insert({
-      user_id:       user.id,
-      product_id:    pkg.product_id ?? null,
-      package_id:    pkg.id,
-      amount:        pkg.price,
-      player_id:     playerId,
-      player_server: serverId || null,
-      status:        'pending',
+      user_id:        user.id,
+      product_id:     pkg.product_id ?? null,
+      package_id:     pkg.id,
+      amount:         pkg.price,
+      player_id:      playerId,
+      player_server:  serverId || null,
+      status:         'pending',
       payment_method: 'wallet',
-      paid_at:       new Date().toISOString(),
+      paid_at:        new Date().toISOString(),
     })
     .select('id')
     .single()
 
   if (insertError) {
-    // คืนเงินถ้า insert ล้มเหลว
     await supabaseAdmin.rpc('refund_balance', {
       p_user_id:     user.id,
       p_amount:      pkg.price,
@@ -116,39 +144,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'บันทึก order ไม่สำเร็จ' }, { status: 500 })
   }
 
-  // 6. เรียก WonDD API
   let wonddRes: any
   try {
     wonddRes = await callWonddTopup(pkg.api_sku, playerId)
   } catch (err) {
-    // ติดต่อ WonDD ไม่ได้ → รอ admin ตรวจ ไม่คืนเงินอัตโนมัติ
     await supabaseAdmin
       .from('topup_orders')
       .update({ status: 'failed', remark: String(err) })
       .eq('id', order.id)
-
     return NextResponse.json({
       error:   'ติดต่อ WonDD ไม่สำเร็จ กรุณาติดต่อ admin',
       orderId: order.id,
     }, { status: 502 })
   }
 
-  // 7. WonDD ตอบ error → คืนเงินทันที
   if (wonddRes.errorcode !== '00') {
     await supabaseAdmin.rpc('refund_balance', {
       p_user_id:     user.id,
       p_amount:      pkg.price,
-      p_description: `คืนเงิน: WonDD ${wonddRes.errorcode}`,
+      p_description: 'คืนเงิน: WonDD ' + wonddRes.errorcode,
       p_reference:   pkg.api_sku,
     })
     await supabaseAdmin
       .from('topup_orders')
-      .update({
-        status: 'failed',
-        remark: `WonDD: ${wonddRes.errorcode} - ${wonddRes.errordetail}`,
-      })
+      .update({ status: 'failed', remark: 'WonDD: ' + wonddRes.errorcode + ' - ' + wonddRes.errordetail })
       .eq('id', order.id)
-
     return NextResponse.json({
       error:   wonddRes.errordetail ?? 'WonDD ปฏิเสธคำสั่ง',
       code:    wonddRes.errorcode,
@@ -156,25 +176,23 @@ export async function POST(req: Request) {
     }, { status: 422 })
   }
 
-  // 8. สำเร็จ → อัปเดต order
   await supabaseAdmin
     .from('topup_orders')
     .update({
       status:         'success',
       wondd_order_id: wonddRes.orderid,
-      remark:         `WonDD orderid: ${wonddRes.orderid}`,
+      remark:         'WonDD orderid: ' + wonddRes.orderid,
       completed_at:   new Date().toISOString(),
     })
     .eq('id', order.id)
 
-  // 9. แจ้งเตือน
   await supabaseAdmin.from('notifications').insert({
     user_id:    user.id,
     type:       'system',
     title:      'เติมเกมสำเร็จ',
     title_th:   'เติมเกมสำเร็จ',
-    message:    `ROV ${pkg.name} Player ID: ${playerId}`,
-    message_th: `ROV ${pkg.name} Player ID: ${playerId}`,
+    message:    'Delta Force ' + pkg.name + ' Player ID: ' + playerId,
+    message_th: 'Delta Force ' + pkg.name + ' Player ID: ' + playerId,
     is_read:    false,
   })
 

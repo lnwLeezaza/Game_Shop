@@ -189,9 +189,16 @@ export const useProductStore = create<ProductState>()((set, get) => ({
     set(state => ({ products: state.products.map(p => p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p) }))
   },
   deleteProduct: async (id) => {
-    try { await productAPI.deleteProduct(id) } catch {}
-    set(state => ({ products: state.products.filter(p => p.id !== id) }))
-  },
+  console.log('deleteProduct called:', id)  // ← เพิ่ม
+  try { 
+    const result = await productAPI.deleteProduct(id)
+    console.log('delete result:', result)  // ← เพิ่ม
+  } catch (e) {
+    console.error('delete error:', e)
+    alert('error: ' + String(e))  // ← popup ให้เห็นชัดๆ
+  }
+  set(state => ({ products: state.products.filter(p => p.id !== id) }))
+},
 }))
 
 // ==================== Order Store ====================

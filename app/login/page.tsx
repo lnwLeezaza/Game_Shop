@@ -27,71 +27,71 @@ export default function LoginPage() {
     const success = await login(email, password)
     if (success) {
       toast.success(th ? 'เข้าสู่ระบบสำเร็จ!' : 'Login successful!')
-      router.push('/dashboard')
+      router.push('/')
     } else {
       toast.error(th ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' : 'Invalid email or password')
     }
   }
 
   const demoAccounts = [
-    { email: 'buyer@example.com', password: 'password', label: th ? '👤 ผู้ซื้อ' : '👤 Buyer', color: '#60a5fa' },
-    { email: 'seller@example.com', password: 'password', label: th ? '🏪 ผู้ขาย' : '🏪 Seller', color: '#34d399' },
-    { email: 'admin@example.com', password: 'password', label: '🛡️ Admin', color: '#f472b6' },
+    { email: 'buyer@example.com', password: 'password', label: th ? '👤 ผู้ซื้อ' : '👤 Buyer', color: '#2563eb' },
+    { email: 'seller@example.com', password: 'password', label: th ? '🏪 ผู้ขาย' : '🏪 Seller', color: '#059669' },
+    { email: 'admin@example.com', password: 'password', label: '🛡️ Admin', color: '#7c3aed' },
   ]
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#050508',
+      background: '#f0f6ff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px 16px',
-      backgroundImage: 'radial-gradient(ellipse at 30% 20%, rgba(139,92,246,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.08) 0%, transparent 50%)',
+      backgroundImage: 'radial-gradient(ellipse at 15% 10%, rgba(37,99,235,0.10) 0%, transparent 50%), radial-gradient(ellipse at 85% 20%, rgba(6,182,212,0.10) 0%, transparent 50%)',
     }}>
-      <div style={{ width: '100%', maxWidth: '440px' }}>
+      <div style={{ width: '100%', maxWidth: '420px' }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <div style={{
-              width: '44px', height: '44px',
-              background: 'linear-gradient(135deg,#7c3aed,#2563eb)',
-              borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 20px rgba(139,92,246,0.4)',
+              width: '42px', height: '42px',
+              background: 'linear-gradient(135deg,#2563eb,#06b6d4)',
+              borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 18px rgba(37,99,235,0.35)',
             }}>
-              <ShoppingBag style={{ width: '22px', height: '22px', color: 'white' }} />
+              <ShoppingBag style={{ width: '20px', height: '20px', color: 'white' }} />
             </div>
             <span style={{
-              fontSize: '22px', fontWeight: 'bold', fontFamily: 'monospace',
-              background: 'linear-gradient(135deg,#a78bfa,#60a5fa)',
+              fontSize: '21px', fontWeight: 'bold', fontFamily: 'monospace',
+              background: 'linear-gradient(135deg,#2563eb,#06b6d4)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>GameShop</span>
           </Link>
-          <p style={{ marginTop: '8px', color: '#64748b', fontSize: '14px', fontFamily: 'monospace' }}>
+          <p style={{ marginTop: '6px', color: '#1d4ed8', fontSize: '12px', fontFamily: 'monospace', opacity: 0.7 }}>
             {th ? '// เข้าสู่ระบบ' : '// LOGIN'}
           </p>
         </div>
 
         <div style={{
-          background: '#0f0f1a',
-          border: '1px solid #1a1a2e',
-          borderRadius: '16px',
+          background: '#ffffff',
+          border: '1px solid #bfdbfe',
+          borderRadius: '14px',
           overflow: 'hidden',
-          boxShadow: '0 0 40px rgba(0,0,0,0.5)',
+          boxShadow: '0 4px 24px rgba(37,99,235,0.10)',
         }}>
-          <div style={{ background: '#070710', borderBottom: '1px solid #1a1a2e', padding: '16px 24px' }}>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#f1f5f9', fontFamily: 'monospace' }}>
+          <div style={{ background: '#f0f8ff', borderBottom: '1px solid #bfdbfe', padding: '14px 22px' }}>
+            <h1 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#0a1628', fontFamily: 'monospace' }}>
               {th ? 'เข้าสู่ระบบ' : 'SIGN IN'}
             </h1>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>
+            <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#1d4ed8', fontFamily: 'monospace', opacity: 0.8 }}>
               {th ? 'ซื้อขายไอดีเกมได้ทันที' : 'Buy & sell game IDs instantly'}
             </p>
           </div>
 
-          <div style={{ padding: '24px' }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ padding: '22px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', marginBottom: '6px', letterSpacing: '0.05em' }}>
+                <label style={{ display: 'block', fontSize: '10px', color: '#1d4ed8', fontFamily: 'monospace', marginBottom: '5px', letterSpacing: '0.08em' }}>
                   {th ? 'อีเมล' : 'EMAIL'}
                 </label>
                 <input
@@ -101,20 +101,20 @@ export default function LoginPage() {
                   onChange={e => setEmail(e.target.value)}
                   required
                   style={{
-                    width: '100%', padding: '10px 14px', boxSizing: 'border-box',
-                    background: '#070710', border: '1px solid #1a1a2e',
-                    borderRadius: '8px', color: '#f1f5f9', fontSize: '14px',
+                    width: '100%', padding: '9px 12px', boxSizing: 'border-box',
+                    background: '#f0f8ff', border: '1px solid #bfdbfe',
+                    borderRadius: '7px', color: '#0a1628', fontSize: '13px',
                     fontFamily: 'monospace', outline: 'none',
                   }}
                 />
               </div>
 
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '10px', color: '#1d4ed8', fontFamily: 'monospace', letterSpacing: '0.08em' }}>
                     {th ? 'รหัสผ่าน' : 'PASSWORD'}
                   </label>
-                  <Link href="/forgot-password" style={{ fontSize: '11px', color: '#8b5cf6', fontFamily: 'monospace', textDecoration: 'none' }}>
+                  <Link href="/forgot-password" style={{ fontSize: '10px', color: '#2563eb', fontFamily: 'monospace', textDecoration: 'none' }}>
                     {th ? 'ลืมรหัสผ่าน?' : 'Forgot?'}
                   </Link>
                 </div>
@@ -126,18 +126,18 @@ export default function LoginPage() {
                     onChange={e => setPassword(e.target.value)}
                     required
                     style={{
-                      width: '100%', padding: '10px 40px 10px 14px', boxSizing: 'border-box',
-                      background: '#070710', border: '1px solid #1a1a2e',
-                      borderRadius: '8px', color: '#f1f5f9', fontSize: '14px',
+                      width: '100%', padding: '9px 36px 9px 12px', boxSizing: 'border-box',
+                      background: '#f0f8ff', border: '1px solid #bfdbfe',
+                      borderRadius: '7px', color: '#0a1628', fontSize: '13px',
                       fontFamily: 'monospace', outline: 'none',
                     }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa' }}
                   >
-                    {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
+                    {showPassword ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
                   </button>
                 </div>
               </div>
@@ -146,27 +146,27 @@ export default function LoginPage() {
                 type="submit"
                 disabled={isLoading}
                 style={{
-                  width: '100%', padding: '13px',
-                  background: isLoading ? '#1a1a2e' : 'linear-gradient(135deg,#7c3aed,#2563eb)',
-                  border: 'none', borderRadius: '8px',
-                  color: isLoading ? '#94a3b8' : 'white',
-                  fontFamily: 'monospace', fontSize: '14px', fontWeight: 'bold',
-                  letterSpacing: '0.05em', cursor: isLoading ? 'not-allowed' : 'pointer',
-                  boxShadow: isLoading ? 'none' : '0 0 20px rgba(139,92,246,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  transition: 'all 0.2s',
+                  width: '100%', padding: '11px',
+                  background: isLoading ? '#e0f0ff' : 'linear-gradient(135deg,#2563eb,#06b6d4)',
+                  border: 'none', borderRadius: '7px',
+                  color: isLoading ? '#1d4ed8' : 'white',
+                  fontFamily: 'monospace', fontSize: '13px', fontWeight: 'bold',
+                  letterSpacing: '0.06em', cursor: isLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: isLoading ? 'none' : '0 0 16px rgba(37,99,235,0.30)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                  transition: 'opacity 0.2s',
                 }}
               >
                 {isLoading
-                  ? <><Loader2 style={{ width: 16, height: 16 }} />{th ? 'กำลังเข้าสู่ระบบ...' : 'Signing in...'}</>
-                  : <><Zap style={{ width: 16, height: 16 }} />{th ? '[ เข้าสู่ระบบ ]' : '[ SIGN IN ]'}</>
+                  ? <><Loader2 style={{ width: 15, height: 15 }} />{th ? 'กำลังเข้าสู่ระบบ...' : 'Signing in...'}</>
+                  : <><Zap style={{ width: 15, height: 15 }} />{th ? '[ เข้าสู่ระบบ ]' : '[ SIGN IN ]'}</>
                 }
               </button>
             </form>
 
             {/* Demo accounts */}
-            <div style={{ marginTop: '20px' }}>
-              <p style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace', textAlign: 'center', marginBottom: '10px', letterSpacing: '0.1em' }}>
+            <div style={{ marginTop: '18px' }}>
+              <p style={{ fontSize: '10px', color: '#60a5fa', fontFamily: 'monospace', textAlign: 'center', marginBottom: '9px', letterSpacing: '0.1em' }}>
                 // DEMO_ACCOUNTS (password: password)
               </p>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -176,8 +176,8 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => { setEmail(a.email); setPassword(a.password) }}
                     style={{
-                      flex: 1, padding: '8px 4px',
-                      background: '#070710', border: `1px solid ${a.color}30`,
+                      flex: 1, padding: '7px 4px',
+                      background: '#f0f8ff', border: '1px solid #bfdbfe',
                       borderRadius: '6px', cursor: 'pointer',
                       fontSize: '10px', color: a.color, fontFamily: 'monospace',
                       transition: 'all 0.2s',
@@ -189,9 +189,11 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>
+            <hr style={{ border: 'none', borderTop: '1px solid #bfdbfe', margin: '16px 0' }} />
+
+            <p style={{ textAlign: 'center', fontSize: '12px', color: '#60a5fa', fontFamily: 'monospace' }}>
               {th ? 'ยังไม่มีบัญชี?' : "Don't have an account?"}{' '}
-              <Link href="/register" style={{ color: '#a78bfa', textDecoration: 'none' }}>
+              <Link href="/register" style={{ color: '#2563eb', textDecoration: 'none' }}>
                 {th ? 'สมัครสมาชิก →' : 'Register →'}
               </Link>
             </p>
@@ -200,8 +202,8 @@ export default function LoginPage() {
       </div>
 
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg) } }
-        input:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 2px rgba(139,92,246,0.15) !important; }
+        input:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important; }
+        button.demo:hover { background: #dbeafe !important; border-color: #93c5fd !important; }
       `}</style>
     </div>
   )

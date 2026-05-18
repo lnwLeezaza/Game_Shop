@@ -208,7 +208,11 @@ export const productAPI = {
         details: product.details,
         tags: product.tags,
         views: 0,
-        stock_pool: (product as any).stockPool || 'none',
+      stock_pool: (product as any).stockPool || 'none',
+      is_on_sale: (product as any).is_on_sale ?? false,
+      discount_percent: (product as any).discount_percent ?? null,
+
+        
       })
       .select()
       .single()
@@ -228,7 +232,17 @@ export const productAPI = {
         details: updates.details,
         tags: updates.tags,
         updated_at: new Date().toISOString(),
-        ...((updates as any).stockPool !== undefined && { stock_pool: (updates as any).stockPool }),
+        
+       // ใหม่ — เพิ่ม 2 บรรทัดนี้
+      ...((updates as any).stockPool !== undefined && { stock_pool: (updates as any).stockPool }),
+      ...((updates as any).is_on_sale !== undefined && { is_on_sale: (updates as any).is_on_sale }),
+      ...((updates as any).discount_percent !== undefined && { discount_percent: (updates as any).discount_percent }),
+      ...((updates as any).is_featured !== undefined && { is_featured: (updates as any).is_featured }),
+      ...((updates as any).original_price !== undefined && { original_price: (updates as any).originalPrice }),
+      ...((updates as any).popup_enabled !== undefined && { popup_enabled: (updates as any).popup_enabled }),
+      ...((updates as any).popup_badge !== undefined && { popup_badge: (updates as any).popup_badge }),
+      ...((updates as any).popup_label !== undefined && { popup_label: (updates as any).popup_label }),
+      ...((updates as any).popup_expires_at !== undefined && { popup_expires_at: (updates as any).popup_expires_at }),
       })
       .eq('id', id)
     if (error) throw error
@@ -613,7 +627,7 @@ export const storageAPI = {
   async uploadAvatar(userId: string, file: File): Promise<string> {
     const ext = file.name.split('.').pop()
     const fileName = `${userId}/avatar.${ext}`
-    const { error } = await supabase.storage.from('avatars').upsert(fileName, file)
+    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true })
     if (error) throw error
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName)
     return data.publicUrl
@@ -683,7 +697,10 @@ function mapProduct(d: Record<string, unknown>): Product {
     views: d.views as number,
     createdAt: d.created_at as string,
 updatedAt: d.updated_at as string,
+    // ใหม่
     stockPool: (d.stock_pool as string) || 'none',
+    is_on_sale: (d.is_on_sale as boolean) ?? false,
+    discount_percent: (d.discount_percent as number) ?? null,
   }
 }
 function mapOrder(d: Record<string, unknown>): Order {

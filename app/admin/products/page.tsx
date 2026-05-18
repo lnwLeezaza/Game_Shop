@@ -32,6 +32,10 @@ const EMPTY_FORM = {
   title: '', description: '', price: '', originalPrice: '',
   category: 'rov', type: 'account', status: 'available',
   tags: '', imageUrl: '', stockPool: 'none',
+  isOnSale: false, isFeatured: false,
+  popupEnabled: false, popupBadge: '', popupLabel: '', popupExpiresAt: '',
+  // ── Highlights ──
+  rank: '', heroCount: '', skinCount: '', highlight1: '', highlight2: '',
 }
 
 export default function AdminProductsPage() {
@@ -67,6 +71,20 @@ export default function AdminProductsPage() {
       price: String(p.price), originalPrice: String(p.originalPrice || ''),
       category: p.category, type: p.type, status: p.status,
       tags: p.tags.join(', '), imageUrl: '', stockPool: (p as any).stockPool || 'none',
+      isOnSale:       (p as any).is_on_sale       ?? false,
+      isFeatured: (p as any).is_featured ?? false,
+      popupEnabled:   (p as any).popup_enabled     ?? false,
+      popupBadge:     (p as any).popup_badge       ?? '',
+      popupLabel:     (p as any).popup_label       ?? '',
+      popupExpiresAt: (p as any).popup_expires_at
+        ? (p as any).popup_expires_at.slice(0, 16)
+        : '',
+      // ── Highlights ──
+      rank:       (p as any).details?.rank       ?? '',
+      heroCount:  (p as any).details?.heroCount  ?? '',
+      skinCount:  (p as any).details?.skinCount  ?? '',
+      highlight1: (p as any).details?.highlight1 ?? '',
+      highlight2: (p as any).details?.highlight2 ?? '',
     })
     setImageFiles([]); setImagePreviews(p.images || [])
     setShowForm(true)
@@ -107,16 +125,33 @@ export default function AdminProductsPage() {
           : form.imageUrl ? [form.imageUrl] : [],
         sellerId: user!.id,
         sellerName: th ? 'ทีมงาน GameShop' : 'GameShop Official',
-        details: {},
+        details: {
+          rank:       form.rank       || null,
+          heroCount:  form.heroCount  || null,
+          skinCount:  form.skinCount  || null,
+          highlight1: form.highlight1 || null,
+          highlight2: form.highlight2 || null,
+        },
         stockPool: form.stockPool,
+        // ── sale fields ──
+        is_on_sale: form.isOnSale,
+        is_featured: form.isFeatured,
+        discount_percent: form.originalPrice && Number(form.originalPrice) > Number(form.price)
+          ? Math.round((1 - Number(form.price) / Number(form.originalPrice)) * 100)
+          : null,
+        // ── popup fields ──
+        popup_enabled:    form.popupEnabled,
+        popup_badge:      form.popupBadge      || null,
+        popup_label:      form.popupLabel      || null,
+        popup_expires_at: form.popupExpiresAt
+          ? new Date(form.popupExpiresAt).toISOString()
+          : null,
       }
 
       if (editProduct) {
-        await updateProduct(editProduct.id, payload, imageFiles.length ? imageFiles : undefined)
-        toast.success(th ? '✅ อัพเดตสินค้าแล้ว' : '✅ Product updated')
+        await updateProduct(editProduct.id, payload as any, imageFiles.length ? imageFiles : undefined)
       } else {
-        await createProduct(payload, imageFiles.length ? imageFiles : undefined)
-        toast.success(th ? '✅ เพิ่มสินค้าแล้ว' : '✅ Product added')
+        await createProduct(payload as any, imageFiles.length ? imageFiles : undefined)
       }
       setShowForm(false)
     } catch {
@@ -167,6 +202,7 @@ export default function AdminProductsPage() {
             </button>
           </div>
           <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+
             {/* Title */}
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={labelStyle}>{th ? 'ชื่อสินค้า *' : 'PRODUCT TITLE *'}</label>
@@ -216,7 +252,8 @@ export default function AdminProductsPage() {
                 {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-        {/* Stock Pool */}
+
+            {/* Stock Pool */}
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={labelStyle}>📦 STOCK POOL (ดึง account อัตโนมัติจาก pool)</label>
               <select value={form.stockPool} onChange={async e => {
@@ -260,42 +297,275 @@ export default function AdminProductsPage() {
                 </div>
               )}
             </div>
-            <div>
-              <label style={labelStyle}>{th ? 'แท็ก (คั่น , )' : 'TAGS (comma separated)'}</label>
-              <input type="text" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
-                placeholder={th ? 'เช่น rov, conqueror, rank' : 'e.g. rov, conqueror, rank'} style={inputStyle} />
+
+            {/* ── Sale / โปรโมชั่น ── */}
+            <div style={{ gridColumn: '1 / -1', background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '10px', padding: '14px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={form.isOnSale}
+                  onChange={e => setForm(f => ({ ...f, isOnSale: e.target.checked }))}
+                  style={{ width: 15, height: 15, accentColor: '#4ade80', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#4ade80', fontFamily: 'monospace', letterSpacing: '0.06em' }}>
+                  🏷️ แสดงในหน้า "ลดราคา / โปรโมชั่น"
+                </span>
+              </label>
+              {form.isOnSale && (
+                <div style={{ marginTop: '8px', fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
+                  {form.originalPrice && Number(form.originalPrice) > Number(form.price)
+                    ? `✅ ลด ${Math.round((1 - Number(form.price) / Number(form.originalPrice)) * 100)}% จากราคาเดิม ฿${form.originalPrice}`
+                    : '⚠️ ใส่ "ราคาเดิม" ด้วยเพื่อแสดง % ส่วนลด (ไม่บังคับ)'}
+                </div>
+              )}
+            </div>
+              {/* ── Featured / ปักหมุดหน้าแรก ── */}
+              <div style={{ gridColumn: '1 / -1', background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '10px', padding: '14px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.isFeatured}
+                    onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))}
+                    style={{ width: 15, height: 15, accentColor: '#8b5cf6', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#a78bfa', fontFamily: 'monospace', letterSpacing: '0.06em' }}>
+                    📌 ปักหมุดแสดงในหน้าแรก (ซื้อ-ขายไอดี)
+                  </span>
+                </label>
+                <div style={{ marginTop: '6px', fontSize: '11px', color: '#475569', fontFamily: 'monospace' }}>
+                  💡 ไอดีที่ติ๊กจะแสดงในส่วน "ซื้อ-ขายไอดีเกม" หน้าแรกก่อนรายการอื่น
+                </div>
+              </div>
+            {/* ── Popup Promotion ── */}
+            <div style={{ gridColumn: '1 / -1', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: '10px', padding: '14px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: form.popupEnabled ? '12px' : 0 }}>
+                <input
+                  type="checkbox"
+                  checked={form.popupEnabled}
+                  onChange={e => setForm(f => ({ ...f, popupEnabled: e.target.checked }))}
+                  style={{ width: 15, height: 15, accentColor: '#ef4444', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#f87171', fontFamily: 'monospace', letterSpacing: '0.06em' }}>
+                  🔥 แสดงใน POPUP โปรโมชั่นหน้าแรก
+                </span>
+              </label>
+              {form.popupEnabled && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={labelStyle}>BADGE เช่น FLASH SALE</label>
+                    <input
+                      type="text"
+                      value={form.popupBadge}
+                      onChange={e => setForm(f => ({ ...f, popupBadge: e.target.value }))}
+                      placeholder="FLASH SALE"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>ข้อความโปร เช่น ลด 30%!</label>
+                    <input
+                      type="text"
+                      value={form.popupLabel}
+                      onChange={e => setForm(f => ({ ...f, popupLabel: e.target.value }))}
+                      placeholder="วันนี้เท่านั้น!"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>หมดเวลา (ไม่บังคับ)</label>
+                    <input
+                      type="datetime-local"
+                      value={form.popupExpiresAt}
+                      onChange={e => setForm(f => ({ ...f, popupExpiresAt: e.target.value }))}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Highlights / จุดเด่น ── */}
+            <div style={{ gridColumn: '1 / -1', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '10px', padding: '14px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fbbf24', fontFamily: 'monospace', marginBottom: '12px' }}>
+                ⭐ จุดเด่นของไอดี (แสดงในการ์ด)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div>
+                  <label style={labelStyle}>🏆 Rank / ระดับ</label>
+                  <input type="text" value={form.rank}
+                    onChange={e => setForm(f => ({ ...f, rank: e.target.value }))}
+                    placeholder="เช่น Conqueror, Heroic, Diamond"
+                    style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>🎮 จำนวนฮีโร่ / ตัวละคร</label>
+                  <input type="text" value={form.heroCount}
+                    onChange={e => setForm(f => ({ ...f, heroCount: e.target.value }))}
+                    placeholder="เช่น 80+ ตัว, ครบทุกตัว"
+                    style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>✨ จำนวนสกิน</label>
+                  <input type="text" value={form.skinCount}
+                    onChange={e => setForm(f => ({ ...f, skinCount: e.target.value }))}
+                    placeholder="เช่น Legendary 5, Epic 12"
+                    style={inputStyle} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={labelStyle}>💎 จุดเด่นพิเศษ 1</label>
+                  <input type="text" value={form.highlight1}
+                    onChange={e => setForm(f => ({ ...f, highlight1: e.target.value }))}
+                    placeholder="เช่น พร้อมโอน, บัญชีเก่า 5 ปี"
+                    style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>🔥 จุดเด่นพิเศษ 2</label>
+                  <input type="text" value={form.highlight2}
+                    onChange={e => setForm(f => ({ ...f, highlight2: e.target.value }))}
+                    placeholder="เช่น ไม่เคยโดนแบน, อีเมลพร้อมส่ง"
+                    style={inputStyle} />
+                </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={labelStyle}>แท็กค้นหา (คั่น , )</label>
+              <input type="text" value={form.tags}
+                onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
+                placeholder="เช่น rov, conqueror, legendary, hero-ครบ"
+                style={inputStyle} />
+              <div style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace', marginTop: '4px' }}>
+                💡 ใส่ keyword สำหรับค้นหา แยกด้วยจุลภาค
+              </div>
             </div>
 
             {/* Image Upload */}
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={labelStyle}>{th ? 'รูปภาพสินค้า' : 'PRODUCT IMAGES'}</label>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                {imagePreviews.map((src, i) => (
-                  <div key={i} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a3e', flexShrink: 0 }}>
-                    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button type="button" onClick={() => removePreview(i)} style={{
-                      position: 'absolute', top: 2, right: 2, width: 18, height: 18,
-                      background: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '50%',
-                      color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <X style={{ width: 10, height: 10 }} />
-                    </button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => fileInputRef.current?.click()} style={{
-                  width: '80px', height: '80px', borderRadius: '8px', flexShrink: 0,
-                  background: '#070710', border: '2px dashed #2a2a3e', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
-                  color: '#94a3b8', fontSize: '10px', fontFamily: 'monospace',
-                }}>
-                  <Upload style={{ width: 20, height: 20 }} />
-                  {th ? 'อัพโหลด' : 'Upload'}
-                </button>
+              <label style={labelStyle}>รูปภาพสินค้า</label>
+
+              <div style={{ marginBottom: '12px', padding: '8px 12px', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '8px', fontSize: '11px', color: '#a78bfa', fontFamily: 'monospace' }}>
+                🖼️ รูปที่ 1 = Logo เกม &nbsp;|&nbsp; 🎨 รูปที่ 2 = Background Header
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageChange} style={{ display: 'none' }} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                {/* รูปที่ 1 — Logo */}
+                <div>
+                  <div style={{ fontSize: '10px', color: '#60a5fa', fontFamily: 'monospace', marginBottom: '6px', fontWeight: 'bold' }}>
+                    🖼️ รูปที่ 1 — Logo เกม
+                  </div>
+                  <div
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = 'image/*'
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0]
+                        if (!file) return
+                        const reader = new FileReader()
+                        reader.onload = ev => {
+                          setImagePreviews(prev => { const next = [...prev]; next[0] = ev.target?.result as string; return next })
+                          setImageFiles(prev => { const next = [...prev]; next[0] = file; return next })
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                      input.click()
+                    }}
+                    style={{
+                      width: '100%', height: '100px', borderRadius: '10px', overflow: 'hidden',
+                      border: `2px dashed ${imagePreviews[0] ? '#60a5fa' : '#2a2a3e'}`,
+                      cursor: 'pointer', position: 'relative', background: '#070710',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    {imagePreviews[0] ? (
+                      <>
+                        <img src={imagePreviews[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 }}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '0'}>
+                          <span style={{ color: '#fff', fontSize: '11px', fontFamily: 'monospace' }}>เปลี่ยนรูป</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ textAlign: 'center', color: '#475569', fontSize: '11px', fontFamily: 'monospace' }}>
+                        <Upload style={{ width: 24, height: 24, margin: '0 auto 4px' }} />
+                        คลิกเพื่ออัพโหลด
+                      </div>
+                    )}
+                  </div>
+                  {imagePreviews[0] && (
+                    <button type="button" onClick={() => {
+                      setImagePreviews(prev => { const n = [...prev]; n[0] = ''; return n })
+                      setImageFiles(prev => { const n = [...prev]; n[0] = undefined as any; return n })
+                    }} style={{ marginTop: '4px', fontSize: '10px', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace' }}>
+                      ✕ ลบรูป
+                    </button>
+                  )}
+                </div>
+
+                {/* รูปที่ 2 — Background */}
+                <div>
+                  <div style={{ fontSize: '10px', color: '#a78bfa', fontFamily: 'monospace', marginBottom: '6px', fontWeight: 'bold' }}>
+                    🎨 รูปที่ 2 — Background Header
+                  </div>
+                  <div
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = 'image/*'
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0]
+                        if (!file) return
+                        const reader = new FileReader()
+                        reader.onload = ev => {
+                          setImagePreviews(prev => { const next = [...prev]; next[1] = ev.target?.result as string; return next })
+                          setImageFiles(prev => { const next = [...prev]; next[1] = file; return next })
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                      input.click()
+                    }}
+                    style={{
+                      width: '100%', height: '100px', borderRadius: '10px', overflow: 'hidden',
+                      border: `2px dashed ${imagePreviews[1] ? '#a78bfa' : '#2a2a3e'}`,
+                      cursor: 'pointer', position: 'relative', background: '#070710',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    {imagePreviews[1] ? (
+                      <>
+                        <img src={imagePreviews[1]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 }}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '0'}>
+                          <span style={{ color: '#fff', fontSize: '11px', fontFamily: 'monospace' }}>เปลี่ยนรูป</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ textAlign: 'center', color: '#475569', fontSize: '11px', fontFamily: 'monospace' }}>
+                        <Upload style={{ width: 24, height: 24, margin: '0 auto 4px' }} />
+                        คลิกเพื่ออัพโหลด
+                      </div>
+                    )}
+                  </div>
+                  {imagePreviews[1] && (
+                    <button type="button" onClick={() => {
+                      setImagePreviews(prev => { const n = [...prev]; n[1] = ''; return n })
+                      setImageFiles(prev => { const n = [...prev]; n[1] = undefined as any; return n })
+                    }} style={{ marginTop: '4px', fontSize: '10px', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace' }}>
+                      ✕ ลบรูป
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* URL input */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>
-                  {th ? 'หรือใส่ URL รูปภาพ:' : 'or paste image URL:'}
+                <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                  หรือใส่ URL (รูปที่ 1):
                 </span>
                 <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
                   placeholder="https://..." style={{ ...inputStyle, flex: 1, padding: '6px 10px', fontSize: '12px' }} />
@@ -370,8 +640,18 @@ export default function AdminProductsPage() {
               <div style={{ fontSize: '13px', color: '#f1f5f9', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {product.title}
               </div>
-              <div style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace', marginTop: '2px' }}>
+              <div style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace', marginTop: '2px', display: 'flex', alignItems: 'center', gap: 6 }}>
                 {product.sellerName} · {new Date(product.createdAt).toLocaleDateString('th-TH')}
+                {(product as any).is_on_sale && (
+                  <span style={{ fontSize: 9, fontWeight: 'bold', padding: '1px 6px', borderRadius: 999, background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>
+                    🏷️ SALE
+                  </span>
+                )}
+                {(product as any).popup_enabled && (
+                  <span style={{ fontSize: 9, fontWeight: 'bold', padding: '1px 6px', borderRadius: 999, background: 'rgba(220,38,38,0.2)', color: '#f87171', border: '1px solid rgba(220,38,38,0.3)' }}>
+                    🔥 POPUP
+                  </span>
+                )}
               </div>
             </div>
             {/* Category */}
@@ -379,8 +659,20 @@ export default function AdminProductsPage() {
               {product.category.toUpperCase()}
             </div>
             {/* Price */}
-            <div style={{ fontSize: '13px', color: '#fbbf24', fontFamily: 'monospace', fontWeight: 'bold' }}>
-              {formatPrice(product.price, locale)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '13px', color: (product as any).is_on_sale ? '#ef4444' : '#fbbf24', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                {formatPrice(product.price, locale)}
+              </span>
+              {product.originalPrice && product.originalPrice > product.price && (
+                <span style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace', textDecoration: 'line-through' }}>
+                  {formatPrice(product.originalPrice, locale)}
+                </span>
+              )}
+              {(product as any).discount_percent && (
+                <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#fff', background: '#ef4444', padding: '1px 5px', borderRadius: 999, width: 'fit-content' }}>
+                  -{(product as any).discount_percent}%
+                </span>
+              )}
             </div>
             {/* Status */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>

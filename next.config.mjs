@@ -1,4 +1,3 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
   images: {
@@ -9,6 +8,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'placehold.co' },
       { protocol: 'https', hostname: 'upload.wikimedia.org' },
       { protocol: 'https', hostname: 'play-lh.googleusercontent.com' },
+      { protocol: 'https', hostname: '**' }, // ← เพิ่มบรรทัดนี้
     ],
   },
   experimental: {

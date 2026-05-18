@@ -27,11 +27,6 @@ const paymentMethods = [
   { id: 'bank',      icon: Building2,  label: { th: 'โอนผ่านธนาคาร',   en: 'Bank Transfer' }, info: { th: 'กสิกรไทย 123-4-56789-0',  en: 'KBank 123-4-56789-0'       } },
 ]
 
-const banks = [
-  'กสิกรไทย (KBank)', 'ไทยพาณิชย์ (SCB)', 'กรุงเทพ (BBL)', 'กรุงไทย (KTB)',
-  'กรุงศรี (BAY)', 'ทหารไทยธนชาต (TTB)', 'ออมสิน', 'ธ.ก.ส.',
-]
-
 // ── Step Indicator ────────────────────────────────────────
 function DepositStepBar({ current }: { current: 'amount' | 'payment' | 'qr' | 'slip' }) {
   const steps = [
@@ -111,14 +106,8 @@ export default function WalletPage() {
   const [depositOpen, setDepositOpen]       = useState(false)
   const [depositStep, setDepositStep]       = useState<'amount' | 'payment' | 'qr' | 'slip'>('amount')
   const [depositLoading, setDepositLoading] = useState(false)
-
-  const [withdrawOpen, setWithdrawOpen]       = useState(false)
-  const [withdrawAmount, setWithdrawAmount]   = useState('')
-  const [withdrawBank, setWithdrawBank]       = useState('')
-  const [withdrawAccount, setWithdrawAccount] = useState('')
-  const [withdrawLoading, setWithdrawLoading] = useState(false)
-  const [isRefreshing, setIsRefreshing]       = useState(false)
-  const [shopSettings, setShopSettings]       = useState({
+  const [isRefreshing, setIsRefreshing]     = useState(false)
+  const [shopSettings, setShopSettings]     = useState({
     promptpay_number: '0812345678',
     promptpay_name: 'GameShop',
     promptpay_qr_url: '',
@@ -152,52 +141,59 @@ export default function WalletPage() {
 
   const handleSlipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    console.log('file selected:', file)
     if (!file) return
     if (file.size > 5 * 1024 * 1024) { toast.error('ไฟล์ใหญ่เกิน 5MB'); return }
     setSlipFile(file)
-    setSlipPreview(URL.createObjectURL(file))
+    const url = URL.createObjectURL(file)
+    console.log('preview url:', url)
+    setSlipPreview(url)
   }
 
   const handleDepositSubmit = async () => {
     if (finalAmount < 20) { toast.error('จำนวนขั้นต่ำ 20 บาท'); return }
     if (!slipFile) { toast.error('กรุณาแนบสลิป'); return }
     setDepositLoading(true)
-    try {
-      let slipUrl = '/placeholder.jpg'
-      try { slipUrl = await storageAPI.uploadSlip(user.id, slipFile) } catch {}
-      const { supabase } = await import('@/lib/supabase')
-      await supabase.from('deposits').insert({
-        user_id: user.id, amount: finalAmount, slip_url: slipUrl,
-        status: 'pending', payment_method: paymentMethod,
-        slip_uploaded_at: new Date().toISOString(),
-      })
-      addTransaction({ userId: user.id, type: 'deposit', amount: finalAmount, balanceBefore: user.balance, balanceAfter: user.balance + finalAmount, status: 'pending', description: `รอตรวจสลิป ฿${finalAmount.toLocaleString()}` })
-      toast.success('📋 ส่งสลิปสำเร็จ รอ admin ตรวจสอบ (ประมาณ 5–30 นาที)')
-      setDepositOpen(false); setDepositStep('amount'); setSlipFile(null); setSlipPreview(''); setCustomAmount('')
-    } catch {
-      addTransaction({ userId: user.id, type: 'deposit', amount: finalAmount, balanceBefore: user.balance, balanceAfter: user.balance + finalAmount, status: 'pending', description: `รอตรวจสลิป ฿${finalAmount.toLocaleString()}` })
-      toast.success('📋 ส่งสลิปสำเร็จ รอ admin ตรวจสอบ')
-      setDepositOpen(false); setDepositStep('amount'); setSlipFile(null); setSlipPreview(''); setCustomAmount('')
-    } finally { setDepositLoading(false) }
-  }
 
-  const handleWithdraw = async () => {
-    const amt = parseInt(withdrawAmount)
-    if (!amt || amt < 100) { toast.error('ถอนขั้นต่ำ 100 บาท'); return }
-    if (amt > user.balance) { toast.error('ยอดเงินไม่พอ'); return }
-    if (!withdrawBank) { toast.error('เลือกธนาคาร'); return }
-    if (!withdrawAccount || withdrawAccount.length < 10) { toast.error('กรอกเลขบัญชีให้ถูกต้อง'); return }
-    setWithdrawLoading(true)
     try {
-      const { supabase } = await import('@/lib/supabase')
-      await supabase.from('withdrawals').insert({ user_id: user.id, amount: amt, bank_account: withdrawAccount, bank_name: withdrawBank, status: 'pending' })
-      await supabase.from('users').update({ balance: user.balance - amt }).eq('id', user.id)
-      updateBalance(-amt)
-    } catch { updateBalance(-amt) }
-    addTransaction({ userId: user.id, type: 'withdrawal', amount: -amt, balanceBefore: user.balance, balanceAfter: user.balance - amt, status: 'pending', description: `ถอนเงิน ${withdrawBank}` })
-    toast.success(`💸 ส่งคำขอถอนเงิน ฿${amt.toLocaleString()} รอ admin อนุมัติ`)
-    setWithdrawOpen(false); setWithdrawAmount(''); setWithdrawBank(''); setWithdrawAccount('')
-    setWithdrawLoading(false)
+      const form = new FormData()
+      form.append("slip", slipFile)
+      form.append("amount", String(finalAmount))
+      form.append("paymentMethod", paymentMethod)
+
+      const res = await fetch("/api/verify-slip", { method: "POST", body: form })
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(`❌ ${data.error}`)
+        return
+      }
+
+      updateBalance(data.amount)
+      addTransaction({
+        userId: user.id,
+        type: 'deposit',
+        amount: data.amount,
+        balanceBefore: user.balance,
+        balanceAfter: user.balance + data.amount,
+        status: 'completed',
+        description: `เติมเงินผ่านสลิป ฿${data.amount.toLocaleString()}`,
+      })
+
+        await fetchTransactions(user.id) // เพิ่มบรรทัดนี้
+
+      toast.success(`✅ เติมเงิน ฿${data.amount.toLocaleString()} สำเร็จ!`)
+      setDepositOpen(false)
+      setDepositStep('amount')
+      setSlipFile(null)
+      setSlipPreview('')
+      setCustomAmount('')
+
+    } catch {
+      toast.error('เกิดข้อผิดพลาด กรุณาลองใหม่')
+    } finally {
+      setDepositLoading(false)
+    }
   }
 
   const handleRefresh = async () => {
@@ -218,9 +214,7 @@ export default function WalletPage() {
 
           {/* ── Balance Card ── */}
           <div className="relative rounded-3xl overflow-hidden">
-            {/* gradient background */}
             <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #c026d3 0%, #7c3aed 50%, #1e1b4b 100%)' }} />
-            {/* grid texture */}
             <svg className="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none">
               <defs>
                 <pattern id="wgrid" width="32" height="32" patternUnits="userSpaceOnUse">
@@ -229,7 +223,6 @@ export default function WalletPage() {
               </defs>
               <rect width="100%" height="100%" fill="url(#wgrid)" />
             </svg>
-            {/* glow */}
             <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none" style={{ background: '#f0abfc', filter: 'blur(60px)', opacity: 0.2 }} />
 
             <div className="relative z-10 p-7">
@@ -256,255 +249,193 @@ export default function WalletPage() {
                 ))}
               </div>
 
-              {/* Action buttons */}
-              <div className="flex gap-3">
-                {/* Deposit Dialog */}
-                <Dialog open={depositOpen} onOpenChange={(o) => { setDepositOpen(o); if (!o) { setDepositStep('amount'); setSlipFile(null); setSlipPreview('') } }}>
-                  <DialogTrigger asChild>
-                    <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all hover:opacity-90 active:scale-95 shadow-lg"
-                      style={{ background: '#fff', color: '#7c3aed' }}>
-                      <Plus size={15} /> เติมเงิน
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-white border border-border max-w-md w-[calc(100vw-32px)] rounded-3xl p-0 overflow-hidden">
-                    {/* Dialog gradient top */}
-                    <div className="h-1" style={{ background: 'linear-gradient(90deg, #d946a8, #7c3aed, #6366f1)' }} />
-                    <div className="p-6">
-                      <DialogHeader className="mb-4">
-                        <DialogTitle className="text-[#1a1028] font-extrabold text-lg">เติมเงินเข้ากระเป๋า</DialogTitle>
-                        <DialogDescription className="text-muted-foreground text-sm">
-                          {depositStep === 'amount'  && 'เลือกหรือกรอกจำนวนเงิน'}
-                          {depositStep === 'payment' && 'เลือกช่องทางการชำระเงิน'}
-                          {depositStep === 'qr'      && 'สแกน QR หรือโอนตามข้อมูลด้านล่าง'}
-                          {depositStep === 'slip'    && 'แนบสลิปหลักฐานการโอนเงิน'}
-                        </DialogDescription>
-                      </DialogHeader>
+              {/* Action button - Deposit only */}
+              <Dialog open={depositOpen} onOpenChange={(o) => { setDepositOpen(o); if (!o) { setDepositStep('amount'); setSlipFile(null); setSlipPreview('') } }}>
+                <DialogTrigger asChild>
+                  <button className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all hover:opacity-90 active:scale-95 shadow-lg"
+                    style={{ background: '#fff', color: '#7c3aed' }}>
+                    <Plus size={15} /> เติมเงิน
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="bg-white border border-border max-w-md w-[calc(100vw-32px)] rounded-3xl p-0 overflow-hidden">
+                  <div className="h-1" style={{ background: 'linear-gradient(90deg, #d946a8, #7c3aed, #6366f1)' }} />
+                  <div className="p-6">
+                    <DialogHeader className="mb-4">
+                      <DialogTitle className="text-[#1a1028] font-extrabold text-lg">เติมเงินเข้ากระเป๋า</DialogTitle>
+                      <DialogDescription className="text-muted-foreground text-sm">
+                        {depositStep === 'amount'  && 'เลือกหรือกรอกจำนวนเงิน'}
+                        {depositStep === 'payment' && 'เลือกช่องทางการชำระเงิน'}
+                        {depositStep === 'qr'      && 'สแกน QR หรือโอนตามข้อมูลด้านล่าง'}
+                        {depositStep === 'slip'    && 'แนบสลิปหลักฐานการโอนเงิน'}
+                      </DialogDescription>
+                    </DialogHeader>
 
-                      <DepositStepBar current={depositStep} />
+                    <DepositStepBar current={depositStep} />
 
-                      {/* STEP 1: Amount */}
-                      {depositStep === 'amount' && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-3 gap-2">
-                            {depositAmounts.map(a => (
-                              <button key={a} onClick={() => { setDepositAmount(a); setCustomAmount('') }}
-                                className={`py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
-                                  depositAmount === a && !customAmount
-                                    ? 'border-primary bg-primary/8 text-primary scale-[1.02]'
-                                    : 'border-border bg-background text-foreground hover:border-primary/40'
-                                }`}>
-                                ฿{a.toLocaleString()}
-                              </button>
-                            ))}
-                          </div>
-                          <input type="number" placeholder="หรือใส่จำนวนเอง (ขั้นต่ำ 20 บาท)" value={customAmount}
-                            onChange={e => setCustomAmount(e.target.value)} min={20} className={inputCls} />
-                          <button onClick={() => setDepositStep('payment')} disabled={finalAmount < 20}
-                            className="w-full py-3 rounded-2xl text-white font-bold text-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-40"
-                            style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)', boxShadow: '0 4px 16px rgba(124,58,237,0.25)' }}>
-                            ถัดไป: เติม ฿{finalAmount.toLocaleString()} →
-                          </button>
-                        </div>
-                      )}
-
-                      {/* STEP 2: Payment Method */}
-                      {depositStep === 'payment' && (
-                        <div className="space-y-3">
-                          {paymentMethods.map(m => (
-                            <button key={m.id} onClick={() => setPaymentMethod(m.id)}
-                              className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${
-                                paymentMethod === m.id ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-primary/40'
+                    {/* STEP 1: Amount */}
+                    {depositStep === 'amount' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          {depositAmounts.map(a => (
+                            <button key={a} onClick={() => { setDepositAmount(a); setCustomAmount('') }}
+                              className={`py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
+                                depositAmount === a && !customAmount
+                                  ? 'border-primary bg-primary/8 text-primary scale-[1.02]'
+                                  : 'border-border bg-background text-foreground hover:border-primary/40'
                               }`}>
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${paymentMethod === m.id ? 'bg-primary/10' : 'bg-secondary'}`}>
-                                <m.icon size={18} className={paymentMethod === m.id ? 'text-primary' : 'text-muted-foreground'} />
-                              </div>
-                              <div>
-                                <div className="text-sm font-bold text-foreground">{th ? m.label.th : m.label.en}</div>
-                                <div className="text-xs text-muted-foreground">{th ? m.info.th : m.info.en}</div>
-                              </div>
-                              {paymentMethod === m.id && (
-                                <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
-                                  <svg viewBox="0 0 10 10" className="w-3 h-3"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" /></svg>
-                                </div>
-                              )}
+                              ฿{a.toLocaleString()}
                             </button>
                           ))}
-                          <div className="flex gap-2 pt-1">
-                            <button onClick={() => setDepositStep('amount')} className="flex-1 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors">← ย้อนกลับ</button>
-                            <button onClick={() => setDepositStep('qr')}
-                              className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity"
-                              style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
-                              ถัดไป: ดูข้อมูลโอน →
-                            </button>
-                          </div>
                         </div>
-                      )}
+                        <input type="number" placeholder="หรือใส่จำนวนเอง (ขั้นต่ำ 20 บาท)" value={customAmount}
+                          onChange={e => setCustomAmount(e.target.value)} min={20} className={inputCls} />
+                        <button onClick={() => setDepositStep('payment')} disabled={finalAmount < 20}
+                          className="w-full py-3 rounded-2xl text-white font-bold text-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-40"
+                          style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)', boxShadow: '0 4px 16px rgba(124,58,237,0.25)' }}>
+                          ถัดไป: เติม ฿{finalAmount.toLocaleString()} →
+                        </button>
+                      </div>
+                    )}
 
-                      {/* STEP 3: QR / Account */}
-                      {depositStep === 'qr' && (
-                        <div className="space-y-4">
-                          {/* Amount box */}
-                          <div className="rounded-2xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(217,70,168,0.07), rgba(124,58,237,0.07))', border: '1px solid rgba(124,58,237,0.15)' }}>
-                            <p className="text-muted-foreground text-xs mb-1">ยอดที่ต้องโอน</p>
-                            <p className="text-3xl font-black" style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                              ฿{finalAmount.toLocaleString()}
-                            </p>
-                          </div>
-
-                          {/* QR / account info */}
-                          <div className="bg-secondary/40 border border-border rounded-2xl p-5 flex flex-col items-center gap-3">
-                            {paymentMethod === 'promptpay' && (
-                              <>
-                                {shopSettings.promptpay_qr_url
-                                  ? <img src={shopSettings.promptpay_qr_url} alt="QR" className="w-40 h-40 rounded-xl object-cover" />
-                                  : <div className="w-40 h-40 bg-white rounded-xl flex flex-col items-center justify-center gap-2 border border-border">
-                                      <QrCode size={48} className="text-muted-foreground/40" />
-                                      <span className="text-xs text-muted-foreground">ไม่มี QR Code</span>
-                                    </div>
-                                }
-                                <div className="text-center">
-                                  <div className="font-bold text-foreground text-sm">พร้อมเพย์: {shopSettings.promptpay_number}</div>
-                                  <div className="text-muted-foreground text-xs">{shopSettings.promptpay_name}</div>
-                                </div>
-                              </>
-                            )}
-                            {paymentMethod === 'truemoney' && (
-                              <>
-                                <Smartphone size={48} className="text-amber-500" />
-                                <div className="text-center">
-                                  <div className="font-black text-foreground text-xl">0812345678</div>
-                                  <div className="text-muted-foreground text-xs">TrueMoney Wallet</div>
-                                </div>
-                              </>
-                            )}
-                            {paymentMethod === 'bank' && (
-                              <>
-                                <Building2 size={48} className="text-emerald-500" />
-                                <div className="text-center">
-                                  <div className="font-bold text-foreground text-sm">กสิกรไทย (KBank)</div>
-                                  <div className="font-black text-2xl" style={{ color: '#7c3aed' }}>123-4-56789-0</div>
-                                  <div className="text-muted-foreground text-xs">ชื่อบัญชี: นาย GameShop</div>
-                                </div>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Warning */}
-                          <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
-                            <AlertCircle size={13} className="shrink-0 mt-0.5" />
-                            โอนตามยอดที่แสดงด้านบน แล้วกดถัดไปเพื่อแนบสลิป
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button onClick={() => setDepositStep('payment')} className="flex-1 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors">← ย้อนกลับ</button>
-                            <button onClick={() => setDepositStep('slip')}
-                              className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity"
-                              style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
-                              ถัดไป: แนบสลิป →
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* STEP 4: Slip */}
-                      {depositStep === 'slip' && (
-                        <div className="space-y-4">
-                          <label htmlFor="slip-upload"
-                            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-6 cursor-pointer transition-all min-h-[140px] ${slipPreview ? 'border-primary bg-primary/5' : 'border-border bg-secondary/30 hover:border-primary/40'}`}>
-                            {slipPreview
-                              ? <img src={slipPreview} alt="slip" className="max-h-44 rounded-xl object-contain" />
-                              : <>
-                                  <Upload size={32} className="text-muted-foreground/50 mb-2" />
-                                  <p className="text-sm text-muted-foreground font-medium">คลิกเพื่ออัปโหลดสลิป</p>
-                                  <p className="text-xs text-muted-foreground/60 mt-1">PNG, JPG (สูงสุด 5MB)</p>
-                                </>
-                            }
-                            <input id="slip-upload" type="file" accept="image/*" onChange={handleSlipChange} className="hidden" />
-                          </label>
-
-                          <div className="flex items-center justify-between bg-secondary/50 border border-border rounded-xl px-4 py-3 text-sm">
-                            <span className="text-muted-foreground">ยอด</span>
-                            <span className="font-bold text-foreground">฿{finalAmount.toLocaleString()}</span>
-                            <span className="text-muted-foreground">ช่องทาง</span>
-                            <span className="font-bold text-foreground">{paymentMethods.find(m => m.id === paymentMethod)?.label.th}</span>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button onClick={() => setDepositStep('qr')} className="flex-1 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors">← ย้อนกลับ</button>
-                            <button onClick={handleDepositSubmit} disabled={!slipFile || depositLoading}
-                              className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
-                              style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
-                              {depositLoading ? '⏳ กำลังส่ง...' : '📤 ส่งสลิป'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Withdraw Dialog */}
-                <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
-                  <DialogTrigger asChild>
-                    <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors">
-                      <ArrowUpRight size={15} /> ถอนเงิน
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-white border border-border max-w-sm w-[calc(100vw-32px)] rounded-3xl p-0 overflow-hidden">
-                    <div className="h-1" style={{ background: 'linear-gradient(90deg, #d946a8, #7c3aed, #6366f1)' }} />
-                    <div className="p-6">
-                      <DialogHeader className="mb-4">
-                        <DialogTitle className="text-[#1a1028] font-extrabold text-lg">ถอนเงิน</DialogTitle>
-                        <DialogDescription className="text-muted-foreground text-sm">
-                          ยอดที่ถอนได้: <strong className="text-foreground">{formatPrice(user.balance, locale)}</strong>
-                        </DialogDescription>
-                      </DialogHeader>
+                    {/* STEP 2: Payment Method */}
+                    {depositStep === 'payment' && (
                       <div className="space-y-3">
-                        <div>
-                          <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">จำนวนเงิน (ขั้นต่ำ 100 บาท)</label>
-                          <div className="flex gap-2">
-                            <input type="number" placeholder="0" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} max={user.balance} min={100} className={inputCls} />
-                            <button onClick={() => setWithdrawAmount(user.balance.toString())} className="px-3 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-xs font-semibold hover:border-primary/40 transition-colors whitespace-nowrap">ทั้งหมด</button>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">ธนาคาร</label>
-                          <select value={withdrawBank} onChange={e => setWithdrawBank(e.target.value)}
-                            className="w-full bg-background border-2 border-border rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-primary transition-all text-foreground">
-                            <option value="">เลือกธนาคาร...</option>
-                            {banks.map(b => <option key={b} value={b}>{b}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">เลขที่บัญชี</label>
-                          <input type="text" placeholder="xxx-x-xxxxx-x" value={withdrawAccount} onChange={e => setWithdrawAccount(e.target.value)} className={inputCls} />
-                        </div>
-                        <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
-                          <AlertCircle size={13} className="shrink-0 mt-0.5" />
-                          การถอนเงินจะถูกตรวจสอบโดย admin ก่อนโอน (1–24 ชั่วโมง)
-                        </div>
+                        {paymentMethods.map(m => (
+                          <button key={m.id} onClick={() => setPaymentMethod(m.id)}
+                            className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${
+                              paymentMethod === m.id ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-primary/40'
+                            }`}>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${paymentMethod === m.id ? 'bg-primary/10' : 'bg-secondary'}`}>
+                              <m.icon size={18} className={paymentMethod === m.id ? 'text-primary' : 'text-muted-foreground'} />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-foreground">{th ? m.label.th : m.label.en}</div>
+                              <div className="text-xs text-muted-foreground">{th ? m.info.th : m.info.en}</div>
+                            </div>
+                            {paymentMethod === m.id && (
+                              <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
+                                <svg viewBox="0 0 10 10" className="w-3 h-3"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" /></svg>
+                              </div>
+                            )}
+                          </button>
+                        ))}
                         <div className="flex gap-2 pt-1">
-                          <button onClick={() => setWithdrawOpen(false)} className="flex-1 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-sm font-semibold">ยกเลิก</button>
-                          <button onClick={handleWithdraw} disabled={withdrawLoading || !withdrawAmount || parseInt(withdrawAmount) > user.balance || !withdrawBank || !withdrawAccount}
-                            className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
+                          <button onClick={() => setDepositStep('amount')} className="flex-1 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors">← ย้อนกลับ</button>
+                          <button onClick={() => setDepositStep('qr')}
+                            className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity"
                             style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
-                            {withdrawLoading ? '⏳ กำลังส่ง...' : '💸 ส่งคำขอถอน'}
+                            ถัดไป: ดูข้อมูลโอน →
                           </button>
                         </div>
                       </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+                    )}
+
+                    {/* STEP 3: QR / Account */}
+                    {depositStep === 'qr' && (
+                      <div className="space-y-4">
+                        <div className="rounded-2xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(217,70,168,0.07), rgba(124,58,237,0.07))', border: '1px solid rgba(124,58,237,0.15)' }}>
+                          <p className="text-muted-foreground text-xs mb-1">ยอดที่ต้องโอน</p>
+                          <p className="text-3xl font-black" style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            ฿{finalAmount.toLocaleString()}
+                          </p>
+                        </div>
+
+                        <div className="bg-secondary/40 border border-border rounded-2xl p-5 flex flex-col items-center gap-3">
+                          {paymentMethod === 'promptpay' && (
+                            <>
+                              <img
+                                src={`https://promptpay.io/${shopSettings.promptpay_number}/${finalAmount}.png`}
+                                alt="QR PromptPay"
+                                className="w-40 h-40 rounded-xl object-cover"
+                              />
+                              <div className="text-center">
+                                <div className="font-bold text-foreground text-sm">พร้อมเพย์: {shopSettings.promptpay_number}</div>
+                                <div className="text-muted-foreground text-xs">{shopSettings.promptpay_name}</div>
+                              </div>
+                            </>
+                          )}
+                          {paymentMethod === 'truemoney' && (
+                            <>
+                              <Smartphone size={48} className="text-amber-500" />
+                              <div className="text-center">
+                                <div className="font-black text-foreground text-xl">0812345678</div>
+                                <div className="text-muted-foreground text-xs">TrueMoney Wallet</div>
+                              </div>
+                            </>
+                          )}
+                          {paymentMethod === 'bank' && (
+                            <>
+                              <Building2 size={48} className="text-emerald-500" />
+                              <div className="text-center">
+                                <div className="font-bold text-foreground text-sm">กสิกรไทย (KBank)</div>
+                                <div className="font-black text-2xl" style={{ color: '#7c3aed' }}>123-4-56789-0</div>
+                                <div className="text-muted-foreground text-xs">ชื่อบัญชี: นาย GameShop</div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
+                          <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                          โอนตามยอดที่แสดงด้านบน แล้วกดถัดไปเพื่อแนบสลิป
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button onClick={() => setDepositStep('payment')} className="flex-1 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors">← ย้อนกลับ</button>
+                          <button onClick={() => setDepositStep('slip')}
+                            className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity"
+                            style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
+                            ถัดไป: แนบสลิป →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 4: Slip */}
+                    {depositStep === 'slip' && (
+                      <div className="space-y-4">
+                        <label htmlFor="slip-upload"
+                          className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-6 cursor-pointer transition-all min-h-[140px] ${slipPreview ? 'border-primary bg-primary/5' : 'border-border bg-secondary/30 hover:border-primary/40'}`}>
+                          {slipPreview
+                            ? <img src={slipPreview} alt="slip" className="max-h-44 rounded-xl object-contain" />
+                            : <>
+                                <Upload size={32} className="text-muted-foreground/50 mb-2" />
+                                <p className="text-sm text-muted-foreground font-medium">คลิกเพื่ออัปโหลดสลิป</p>
+                                <p className="text-xs text-muted-foreground/60 mt-1">PNG, JPG (สูงสุด 5MB)</p>
+                              </>
+                          }
+                          <input id="slip-upload" type="file" accept="image/*" onChange={handleSlipChange} className="hidden" />
+                        </label>
+
+                        <div className="flex items-center justify-between bg-secondary/50 border border-border rounded-xl px-4 py-3 text-sm">
+                          <span className="text-muted-foreground">ยอด</span>
+                          <span className="font-bold text-foreground">฿{finalAmount.toLocaleString()}</span>
+                          <span className="text-muted-foreground">ช่องทาง</span>
+                          <span className="font-bold text-foreground">{paymentMethods.find(m => m.id === paymentMethod)?.label.th}</span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button onClick={() => setDepositStep('qr')} className="flex-1 py-2.5 rounded-xl border-2 border-border text-muted-foreground text-sm font-semibold hover:border-primary/40 transition-colors">← ย้อนกลับ</button>
+                          <button onClick={handleDepositSubmit} disabled={!slipFile || depositLoading}
+                            className="flex-[2] py-2.5 rounded-xl text-white font-bold text-sm disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
+                            style={{ background: 'linear-gradient(135deg, #d946a8, #7c3aed)' }}>
+                            {depositLoading ? '⏳ กำลังส่ง...' : '📤 ส่งสลิป'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
           {/* ── Quick Stats ── */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'ฝากทั้งหมด',   val: userTxns.filter(t => t.type === 'deposit' && t.status === 'completed').reduce((s, t) => s + t.amount, 0),                                           color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', icon: <ArrowDownRight size={14} className="text-emerald-500" /> },
-              { label: 'ใช้จ่ายทั้งหมด', val: Math.abs(userTxns.filter(t => t.type === 'purchase' || t.type === 'gacha').reduce((s, t) => s + t.amount, 0)),                                    color: 'text-amber-600',   bg: 'bg-amber-50 border-amber-100',     icon: <ArrowUpRight size={14} className="text-amber-500" /> },
-              { label: 'รายได้จากขาย', val: userTxns.filter(t => t.type === 'sale').reduce((s, t) => s + t.amount, 0),                                                                          color: 'text-primary',     bg: 'bg-primary/5 border-primary/10',   icon: <Wallet size={14} className="text-primary" /> },
+              { label: 'ฝากทั้งหมด',     val: userTxns.filter(t => t.type === 'deposit' && t.status === 'completed').reduce((s, t) => s + t.amount, 0),                color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', icon: <ArrowDownRight size={14} className="text-emerald-500" /> },
+              { label: 'ใช้จ่ายทั้งหมด', val: Math.abs(userTxns.filter(t => t.type === 'purchase' || t.type === 'gacha').reduce((s, t) => s + t.amount, 0)),           color: 'text-amber-600',   bg: 'bg-amber-50 border-amber-100',     icon: <ArrowUpRight size={14} className="text-amber-500" /> },
+              { label: 'รายได้จากขาย',   val: userTxns.filter(t => t.type === 'sale').reduce((s, t) => s + t.amount, 0),                                               color: 'text-primary',     bg: 'bg-primary/5 border-primary/10',   icon: <Wallet size={14} className="text-primary" /> },
             ].map((stat, i) => (
               <div key={i} className={`rounded-2xl border p-4 ${stat.bg}`}>
                 <div className="flex items-center gap-1.5 mb-2">{stat.icon}<span className="text-[10px] text-muted-foreground font-semibold">{stat.label}</span></div>
@@ -515,7 +446,6 @@ export default function WalletPage() {
 
           {/* ── Transaction History ── */}
           <div className="bg-white border border-border rounded-3xl overflow-hidden shadow-sm">
-            {/* top strip */}
             <div className="h-1" style={{ background: 'linear-gradient(90deg, #d946a8, #7c3aed, #6366f1)' }} />
             <div className="p-5">
               <h2 className="text-[#1a1028] font-extrabold text-base mb-0.5">ประวัติธุรกรรม</h2>

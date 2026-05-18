@@ -1,18 +1,23 @@
+// lib/wondd.ts
+// ============================================================
+// WonDD API Helper — ใช้ร่วมกันทุกเกม
+// ============================================================
+
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextResponse } from 'next/server'
 
 const WONDD_URL  = 'https://www.wondd.com/member/bot-game.php'
 const WONDD_USER = process.env.WONDD_USERNAME!
 const WONDD_PASS = process.env.WONDD_PASSWORD!
 
-async function getSupabaseUser() {
+export const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function getSupabaseUser() {
   const cookieStore = await cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,13 +35,13 @@ async function getSupabaseUser() {
   )
 }
 
-// ── เรียก WonDD Topup ─────────────────────────────────────────
-async function callWonddTopup(packcode: string, gameid: string) {
+// ── เรียก WonDD Topup API ────────────────────────────────────
+export async function callWonddTopup(servicecode: string, packcode: string, gameid: string) {
   const body = new URLSearchParams({
-    method:      'topup',
-    username:    WONDD_USER,
-    password:    WONDD_PASS,
-    servicecode: 'rov',
+    method: 'topup',
+    username: WONDD_USER,
+    password: WONDD_PASS,
+    servicecode,
     packcode,
     gameid,
   })
@@ -49,59 +54,30 @@ async function callWonddTopup(packcode: string, gameid: string) {
   })
 
   const text = await res.text()
-  try {
-    return JSON.parse(text)
-  } catch {
-    throw new Error('WonDD returned invalid JSON: ' + text)
-  }
+  try { return JSON.parse(text) }
+  catch { throw new Error('WonDD invalid JSON: ' + text) }
 }
 
-export async function GET() {
-  const { data: packages, error } = await supabaseAdmin
-    .from('topup_packages')
-    .select('*')
-    .eq('is_active', true)
-    .eq('game_code', 'rov')
-    .order('price', { ascending: true })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  const mapped = (packages ?? []).map(p => ({
-    id:            p.id,
-    sku:           p.api_sku,
-    amount:        p.diamond_amount,
-    label:         p.name,
-    currencyLabel: p.currency_label,
-    price:         p.price,
-    originalPrice: p.original_price ?? null,
-    bonusAmount:   p.bonus_amount ?? 0,
-    tier:          p.tier ?? 'normal',
-    badge:         p.badge ?? null,
-    badgeColor:    p.badge_color ?? null,
-    valuePerUnit:  +(p.price / p.diamond_amount).toFixed(4),
-  }))
-
-  return NextResponse.json({ packages: mapped })
-}
-
-export async function POST(req: Request) {
-  // 1. ตรวจสอบ user
+// ── Handler กลาง — ใช้ทุกเกม ─────────────────────────────────
+export async function handleTopupOrder(
+  req: Request,
+  servicecode: string,
+  gameName: string
+) {
+  // 1. ตรวจ user
   const supabaseUser = await getSupabaseUser()
   const { data: { user } } = await supabaseUser.auth.getUser()
   if (!user) return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 })
 
-  // 2. ตรวจสอบ input
+  // 2. ตรวจ input
   const { packageId, playerId, serverId } = await req.json()
   if (!packageId || !playerId)
     return NextResponse.json({ error: 'ข้อมูลไม่ครบ' }, { status: 400 })
 
-  if (!/^\d{8,12}$/.test(playerId))
-    return NextResponse.json({ error: 'Player ID ไม่ถูกต้อง' }, { status: 400 })
-
-  // 3. ดึงข้อมูลแพ็กเกจ
+  // 3. ดึงแพ็กเกจ
   const { data: pkg, error: pkgError } = await supabaseAdmin
     .from('topup_packages')
-    .select('id, name, price, diamond_amount, currency_label, api_sku')
+    .select('id, name, price, diamond_amount, currency_label, api_sku, product_id')
     .eq('id', packageId)
     .eq('is_active', true)
     .single()
@@ -110,15 +86,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'ไม่พบแพ็กเกจ' }, { status: 404 })
 
   // 4. ตัดเงิน
-  const { data: result } = await supabaseAdmin.rpc('deduct_balance', {
+  const { data: result, error: rpcError } = await supabaseAdmin.rpc('deduct_balance', {
     p_user_id:     user.id,
     p_amount:      pkg.price,
-    p_description: `เติม ROV ${pkg.name} → Player ID: ${playerId}`,
+    p_description: `เติม ${gameName} ${pkg.name} Player ID: ${playerId}`,
     p_reference:   pkg.api_sku,
   })
 
-  if (!result.success) {
-    if (result.error === 'insufficient_balance') {
+  if (rpcError || !result?.success) {
+    if (result?.error === 'insufficient_balance') {
       return NextResponse.json({
         error:    'ยอดเงินไม่เพียงพอ',
         balance:  result.balance,
@@ -133,20 +109,19 @@ export async function POST(req: Request) {
     .from('topup_orders')
     .insert({
       user_id:        user.id,
+      product_id:     pkg.product_id ?? null,
       package_id:     pkg.id,
+      amount:         pkg.price,
       player_id:      playerId,
-      server_id:      serverId ?? null,
-      amount_paid:    pkg.price,
-      diamond_amount: pkg.diamond_amount,
+      player_server:  serverId || null,
       status:         'pending',
-      balance_before: result.balance_before,
-      balance_after:  result.balance_after,
+      payment_method: 'wallet',
+      paid_at:        new Date().toISOString(),
     })
     .select('id')
     .single()
 
   if (insertError) {
-    // Rollback คืนเงิน
     await supabaseAdmin.rpc('refund_balance', {
       p_user_id:     user.id,
       p_amount:      pkg.price,
@@ -159,9 +134,8 @@ export async function POST(req: Request) {
   // 6. เรียก WonDD API
   let wonddRes: any
   try {
-    wonddRes = await callWonddTopup(pkg.api_sku, playerId)
+    wonddRes = await callWonddTopup(servicecode, pkg.api_sku, playerId)
   } catch (err) {
-    // WonDD error → อัปเดต order เป็น failed แต่ไม่คืนเงินอัตโนมัติ (รอ admin ตรวจ)
     await supabaseAdmin
       .from('topup_orders')
       .update({ status: 'failed', remark: String(err) })
@@ -173,16 +147,14 @@ export async function POST(req: Request) {
     }, { status: 502 })
   }
 
-  // 7. เช็ค WonDD error code
+  // 7. WonDD error → คืนเงินทันที
   if (wonddRes.errorcode !== '00') {
-    // WonDD ปฏิเสธ → คืนเงินทันที
     await supabaseAdmin.rpc('refund_balance', {
       p_user_id:     user.id,
       p_amount:      pkg.price,
-      p_description: `คืนเงิน: WonDD error ${wonddRes.errorcode}`,
+      p_description: `คืนเงิน: WonDD ${wonddRes.errorcode}`,
       p_reference:   pkg.api_sku,
     })
-
     await supabaseAdmin
       .from('topup_orders')
       .update({
@@ -198,15 +170,27 @@ export async function POST(req: Request) {
     }, { status: 422 })
   }
 
-  // 8. สำเร็จ → อัปเดต order เป็น completed
+  // 8. สำเร็จ → อัปเดต order
   await supabaseAdmin
     .from('topup_orders')
     .update({
-      status:         'completed',
+      status:         'success',
       wondd_order_id: wonddRes.orderid,
       remark:         `WonDD orderid: ${wonddRes.orderid}`,
+      completed_at:   new Date().toISOString(),
     })
     .eq('id', order.id)
+
+  // 9. แจ้งเตือน
+  await supabaseAdmin.from('notifications').insert({
+    user_id:    user.id,
+    type:       'system',
+    title:      'เติมเกมสำเร็จ',
+    title_th:   'เติมเกมสำเร็จ',
+    message:    `${gameName} ${pkg.name} Player ID: ${playerId}`,
+    message_th: `${gameName} ${pkg.name} Player ID: ${playerId}`,
+    is_read:    false,
+  })
 
   return NextResponse.json({
     success:      true,

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, ShoppingBag, Loader2, Check, User } from 'lucide-react'
+import { Eye, EyeOff, ShoppingBag, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/store'
 import { useLocale } from '@/hooks/use-locale'
@@ -32,7 +32,6 @@ export default function RegisterPage() {
     e.preventDefault()
     if (submitting || isLoading) return
 
-    // Client-side validation
     if (!email.trim() || !username.trim() || !password || !confirmPassword) {
       toast.error(th ? 'กรุณากรอกข้อมูลให้ครบ' : 'Please fill in all fields')
       return
@@ -55,11 +54,9 @@ export default function RegisterPage() {
 
     try {
       const result = await register(email.trim(), username.trim(), password)
-
       toast.dismiss(loadingToast)
 
       if (result === 'confirm_email') {
-        // Supabase เปิด email confirmation — ต้องกดยืนยันอีเมลก่อน
         toast.success(
           th
             ? '📧 กรุณาเช็คอีเมลและกดลิงก์ยืนยันก่อนเข้าสู่ระบบ'
@@ -67,17 +64,12 @@ export default function RegisterPage() {
           { duration: 10000 }
         )
         router.push('/login')
-
       } else if (result === true) {
-        // สมัครสำเร็จและ login ทันที
         toast.success(th ? '✅ สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ' : '✅ Registration successful! Welcome!')
         router.push('/')
-
       } else {
-        // result = false — ไม่ควรเกิด แต่ handle ไว้
         toast.error(th ? 'เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่' : 'Unexpected error, please try again')
       }
-
     } catch (err: any) {
       toast.dismiss(loadingToast)
       const msg: string = err?.message || ''
@@ -91,7 +83,7 @@ export default function RegisterPage() {
       } else if (msg.includes('invalid') && msg.includes('email')) {
         toast.error(th ? 'รูปแบบอีเมลไม่ถูกต้อง' : 'Invalid email format')
       } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('fetch')) {
-        toast.error(th ? '❌ ไม่สามารถเชื่อมต่อ Supabase ได้ — ตรวจสอบ .env.local' : '❌ Cannot connect to Supabase — check .env.local')
+        toast.error(th ? '❌ ไม่สามารถเชื่อมต่อ Supabase ได้' : '❌ Cannot connect to Supabase — check .env.local')
       } else {
         toast.error(msg || (th ? 'เกิดข้อผิดพลาด กรุณาลองใหม่' : 'Registration failed, please try again'))
       }
@@ -105,12 +97,12 @@ export default function RegisterPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#050508',
+      background: '#f0f6ff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px 16px',
-      backgroundImage: 'radial-gradient(ellipse at 30% 20%, rgba(139,92,246,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.08) 0%, transparent 50%)',
+      backgroundImage: 'radial-gradient(ellipse at 15% 10%, rgba(37,99,235,0.10) 0%, transparent 50%), radial-gradient(ellipse at 85% 20%, rgba(6,182,212,0.10) 0%, transparent 50%)',
     }}>
       <div style={{ width: '100%', maxWidth: '480px' }}>
 
@@ -119,74 +111,45 @@ export default function RegisterPage() {
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <div style={{
               width: '44px', height: '44px',
-              background: 'linear-gradient(135deg,#7c3aed,#2563eb)',
+              background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
               borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 20px rgba(139,92,246,0.4)',
+              boxShadow: '0 0 16px rgba(37,99,235,0.35)',
             }}>
               <ShoppingBag style={{ width: '22px', height: '22px', color: 'white' }} />
             </div>
             <span style={{
               fontSize: '22px', fontWeight: 'bold', fontFamily: 'monospace',
-              background: 'linear-gradient(135deg,#a78bfa,#60a5fa)',
+              background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>GameShop</span>
           </Link>
-          <p style={{ marginTop: '8px', color: '#64748b', fontSize: '14px', fontFamily: 'monospace' }}>
+          <p style={{ marginTop: '8px', color: '#1d4ed8', fontSize: '14px', fontFamily: 'monospace' }}>
             {th ? '// สมัครสมาชิกฟรี' : '// CREATE_ACCOUNT'}
           </p>
         </div>
 
         <div style={{
-          background: '#0f0f1a',
-          border: '1px solid #1a1a2e',
+          background: '#ffffff',
+          border: '1px solid #bfdbfe',
           borderRadius: '16px',
           overflow: 'hidden',
-          boxShadow: '0 0 40px rgba(0,0,0,0.5)',
+          boxShadow: '0 2px 24px rgba(37,99,235,0.08)',
         }}>
-          <div style={{ background: '#070710', borderBottom: '1px solid #1a1a2e', padding: '16px 24px' }}>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#f1f5f9', fontFamily: 'monospace' }}>
+          <div style={{ background: '#f0f8ff', borderBottom: '1px solid #bfdbfe', padding: '16px 24px' }}>
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#0a1628', fontFamily: 'monospace' }}>
               {th ? 'สมัครสมาชิก' : 'REGISTER'}
             </h1>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#1d4ed8', fontFamily: 'monospace' }}>
               {th ? 'เริ่มต้นซื้อขายได้ทันที' : 'Start trading instantly'}
             </p>
           </div>
 
           <div style={{ padding: '24px' }}>
-            {/* Account type */}
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{
-                padding: '14px 16px',
-                background: 'rgba(139,92,246,0.1)',
-                border: '1px solid rgba(139,92,246,0.3)',
-                borderRadius: '10px',
-                display: 'flex', alignItems: 'center', gap: '12px',
-              }}>
-                <div style={{
-                  width: '36px', height: '36px', flexShrink: 0,
-                  background: 'rgba(139,92,246,0.2)',
-                  borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <User style={{ width: '18px', height: '18px', color: '#a78bfa' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#a78bfa', fontFamily: 'monospace' }}>
-                    {th ? 'ผู้ซื้อ (BUYER)' : 'BUYER'}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace', marginTop: '2px' }}>
-                    {th ? 'สมัครเป็นผู้ซื้อก่อน — อัปเกรดเป็นผู้ขายได้ใน Settings' : 'Register as buyer — upgrade to seller in Settings'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
               {/* Email */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', marginBottom: '6px', letterSpacing: '0.05em' }}>
-                  {th ? 'อีเมล' : 'EMAIL'}
-                </label>
+                <label style={labelStyle}>{th ? 'อีเมล' : 'EMAIL'}</label>
                 <input
                   type="email"
                   placeholder="name@example.com"
@@ -200,9 +163,7 @@ export default function RegisterPage() {
 
               {/* Username */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', marginBottom: '6px', letterSpacing: '0.05em' }}>
-                  {th ? 'ชื่อผู้ใช้' : 'USERNAME'}
-                </label>
+                <label style={labelStyle}>{th ? 'ชื่อผู้ใช้' : 'USERNAME'}</label>
                 <input
                   type="text"
                   placeholder={th ? 'ชื่อที่แสดงในร้านค้า' : 'Display name in shop'}
@@ -216,9 +177,7 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', marginBottom: '6px', letterSpacing: '0.05em' }}>
-                  {th ? 'รหัสผ่าน' : 'PASSWORD'}
-                </label>
+                <label style={labelStyle}>{th ? 'รหัสผ่าน' : 'PASSWORD'}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -232,7 +191,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa', padding: '2px' }}
                   >
                     {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
                   </button>
@@ -240,8 +199,8 @@ export default function RegisterPage() {
                 {password && (
                   <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {passwordReqs.map((req, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: req.met ? '#4ade80' : '#94a3b8', fontFamily: 'monospace' }}>
-                        <Check style={{ width: 12, height: 12, opacity: req.met ? 1 : 0.3 }} />
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: req.met ? '#2563eb' : '#93c5fd', fontFamily: 'monospace' }}>
+                        <Check style={{ width: 12, height: 12, opacity: req.met ? 1 : 0.4 }} />
                         {req.text}
                       </div>
                     ))}
@@ -251,9 +210,7 @@ export default function RegisterPage() {
 
               {/* Confirm Password */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', marginBottom: '6px', letterSpacing: '0.05em' }}>
-                  {th ? 'ยืนยันรหัสผ่าน' : 'CONFIRM PASSWORD'}
-                </label>
+                <label style={labelStyle}>{th ? 'ยืนยันรหัสผ่าน' : 'CONFIRM PASSWORD'}</label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
@@ -261,10 +218,10 @@ export default function RegisterPage() {
                   onChange={e => setConfirmPassword(e.target.value)}
                   disabled={busy}
                   required
-                  style={{ ...inputStyle, borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#1a1a2e' }}
+                  style={{ ...inputStyle, borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#bfdbfe' }}
                 />
                 {confirmPassword && password !== confirmPassword && (
-                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#f87171', fontFamily: 'monospace' }}>
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#ef4444', fontFamily: 'monospace' }}>
                     {th ? '❌ รหัสผ่านไม่ตรงกัน' : '❌ Passwords do not match'}
                   </p>
                 )}
@@ -278,13 +235,13 @@ export default function RegisterPage() {
                   checked={acceptTerms}
                   onChange={e => setAcceptTerms(e.target.checked)}
                   disabled={busy}
-                  style={{ marginTop: '2px', accentColor: '#8b5cf6', cursor: 'pointer' }}
+                  style={{ marginTop: '2px', accentColor: '#2563eb', cursor: 'pointer' }}
                 />
-                <label htmlFor="terms" style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace', lineHeight: 1.5, cursor: 'pointer' }}>
+                <label htmlFor="terms" style={{ fontSize: '12px', color: '#1e40af', fontFamily: 'monospace', lineHeight: 1.5, cursor: 'pointer' }}>
                   {th ? (
-                    <>ฉันยอมรับ <Link href="/terms" style={{ color: '#a78bfa' }}>เงื่อนไขการใช้งาน</Link> และ <Link href="/privacy" style={{ color: '#a78bfa' }}>นโยบายความเป็นส่วนตัว</Link></>
+                    <>ฉันยอมรับ <Link href="/terms" style={{ color: '#2563eb' }}>เงื่อนไขการใช้งาน</Link> และ <Link href="/privacy" style={{ color: '#2563eb' }}>นโยบายความเป็นส่วนตัว</Link></>
                   ) : (
-                    <>I accept the <Link href="/terms" style={{ color: '#a78bfa' }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: '#a78bfa' }}>Privacy Policy</Link></>
+                    <>I accept the <Link href="/terms" style={{ color: '#2563eb' }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: '#2563eb' }}>Privacy Policy</Link></>
                   )}
                 </label>
               </div>
@@ -295,12 +252,12 @@ export default function RegisterPage() {
                 disabled={busy}
                 style={{
                   width: '100%', padding: '13px',
-                  background: busy ? '#1a1a2e' : 'linear-gradient(135deg,#7c3aed,#2563eb)',
+                  background: busy ? '#e0f0ff' : 'linear-gradient(135deg, #2563eb, #06b6d4)',
                   border: 'none', borderRadius: '8px',
-                  color: busy ? '#94a3b8' : 'white',
+                  color: busy ? '#93c5fd' : 'white',
                   fontFamily: 'monospace', fontSize: '14px', fontWeight: 'bold',
                   letterSpacing: '0.05em', cursor: busy ? 'not-allowed' : 'pointer',
-                  boxShadow: busy ? 'none' : '0 0 20px rgba(139,92,246,0.3)',
+                  boxShadow: busy ? 'none' : '0 0 16px rgba(37,99,235,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   transition: 'all 0.2s',
                 }}
@@ -313,9 +270,9 @@ export default function RegisterPage() {
               </button>
             </form>
 
-            <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>
+            <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px', color: '#1d4ed8', fontFamily: 'monospace' }}>
               {th ? 'มีบัญชีแล้ว?' : 'Already have an account?'}{' '}
-              <Link href="/login" style={{ color: '#a78bfa', textDecoration: 'none' }}>
+              <Link href="/login" style={{ color: '#2563eb', textDecoration: 'none' }}>
                 {th ? 'เข้าสู่ระบบ →' : 'Login →'}
               </Link>
             </p>
@@ -325,16 +282,23 @@ export default function RegisterPage() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
-        input:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 2px rgba(139,92,246,0.15) !important; }
+        input:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important; }
+        input::placeholder { color: #60a5fa !important; opacity: 1 !important; }
         a { text-decoration: none; }
       `}</style>
     </div>
   )
 }
 
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: '11px', color: '#1e40af',
+  fontFamily: 'monospace', marginBottom: '6px',
+  letterSpacing: '0.05em', fontWeight: 600,
+}
+
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 14px', boxSizing: 'border-box',
-  background: '#070710', border: '1px solid #1a1a2e',
-  borderRadius: '8px', color: '#f1f5f9', fontSize: '14px',
+  background: '#f0f8ff', border: '1px solid #bfdbfe',
+  borderRadius: '8px', color: '#0a1628', fontSize: '14px',
   fontFamily: 'monospace', outline: 'none',
 }

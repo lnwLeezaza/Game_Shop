@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Shield,
   Package,
+  Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,17 +29,17 @@ import {
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useAuthStore, useNotificationStore } from '@/lib/store'
 import { useLocale, formatPrice } from '@/hooks/use-locale'
 
 const categories = [
-  { id: 'rov', label: 'ROV' },
-  { id: 'freefire', label: 'Free Fire' },
-  { id: 'efootball', label: 'eFootball' },
-  { id: 'pubg', label: 'PUBG' },
-  { id: 'genshin', label: 'Genshin' },
-  { id: 'roblox', label: 'Roblox' },
+  { id: 'rov',      label: 'ROV',       emoji: '⚔️' },
+  { id: 'freefire', label: 'Free Fire', emoji: '🔥' },
+  { id: 'efootball',label: 'eFootball', emoji: '⚽' },
+  { id: 'pubg',     label: 'PUBG',      emoji: '🎯' },
+  { id: 'genshin',  label: 'Genshin',   emoji: '✨' },
+  { id: 'roblox',   label: 'Roblox',    emoji: '🟥' },
 ]
 
 export function Header() {
@@ -47,300 +48,461 @@ export function Header() {
   const { locale, toggleLocale, t } = useLocale()
   const [searchOpen, setSearchOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const channelRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [scrolled, setScrolled] = useState(false)
 
-  // Realtime: notifications + balance updates
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   useEffect(() => {
     if (!user) return
     fetchNotifications(user.id)
 
     let cleanup: (() => void) | undefined
-
     const setupRealtime = async () => {
       try {
         const { notificationAPI, realtimeAPI } = await import('@/lib/supabase')
-
-        // Subscribe to new notifications
         const notifChannel = notificationAPI.subscribeToNotifications(user.id, (n) => {
           addNotification(n)
           if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === 'granted') {
             new window.Notification(n.title || 'GameShop', { body: n.message })
           }
         })
-
-        // Subscribe to balance changes
-        const balanceChannel = realtimeAPI.subscribeToUserBalance(user.id, () => {
-          refreshUser()
-        })
-
-        cleanup = () => {
-          notifChannel?.unsubscribe?.()
-          balanceChannel?.unsubscribe?.()
-        }
+        const balanceChannel = realtimeAPI.subscribeToUserBalance(user.id, () => { refreshUser() })
+        cleanup = () => { notifChannel?.unsubscribe?.(); balanceChannel?.unsubscribe?.() }
       } catch {}
     }
-
     setupRealtime()
     return () => { cleanup?.() }
   }, [user?.id])
 
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="flex h-16 items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-blue-600 shadow-lg shadow-primary/25">
-              <ShoppingBag className="h-5 w-5 text-white" />
-              <div className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
-            </div>
-            <span className="hidden bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-xl font-bold text-transparent sm:inline-block">
-              GameShop
-            </span>
-          </Link>
+    <>
+      <style>{`
+        .header-root {
+          position: sticky; top: 0; z-index: 50; width: 100%;
+          transition: all 0.3s ease;
+        }
+        .header-root.scrolled {
+          box-shadow: 0 4px 32px rgba(37,99,235,0.12), 0 1px 0 rgba(191,219,254,0.5);
+        }
+        .header-inner {
+          background: rgba(240,246,255,0.92);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(191,219,254,0.7);
+        }
+        .logo-orb {
+          position: relative;
+          width: 36px; height: 36px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 0 0 0 rgba(37,99,235,0.4);
+          transition: box-shadow 0.3s ease, transform 0.2s ease;
+        }
+        .logo-orb:hover {
+          box-shadow: 0 0 20px rgba(37,99,235,0.45), 0 0 40px rgba(6,182,212,0.2);
+          transform: scale(1.05);
+        }
+        .logo-dot {
+          position: absolute; top: -3px; right: -3px;
+          width: 10px; height: 10px; border-radius: 50%;
+          background: #22c55e;
+          border: 2px solid #f0f6ff;
+          animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+          50% { box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+        }
+        .logo-text {
+          background: linear-gradient(90deg, #2563eb, #06b6d4);
+          -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent;
+          font-size: 18px; font-weight: 800; letter-spacing: -0.03em;
+        }
+        .nav-link {
+          position: relative;
+          padding: 6px 12px; border-radius: 8px;
+          font-size: 13px; font-weight: 600;
+          color: #1e40af;
+          text-decoration: none;
+          transition: all 0.18s ease;
+          white-space: nowrap;
+        }
+        .nav-link:hover {
+          color: #2563eb;
+          background: rgba(37,99,235,0.08);
+        }
+        .nav-link.active {
+          color: #2563eb;
+          background: rgba(37,99,235,0.1);
+        }
+        .nav-link-special {
+          background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(249,115,22,0.1));
+          border: 1px solid rgba(249,115,22,0.25);
+          color: #c2410c;
+        }
+        .nav-link-special:hover {
+          background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(249,115,22,0.18));
+          color: #ea580c;
+        }
+        .search-wrap {
+          position: relative; flex: 1; max-width: 320px;
+        }
+        .search-input {
+          width: 100%;
+          padding: 7px 12px 7px 36px;
+          border-radius: 10px;
+          border: 1.5px solid #bfdbfe;
+          background: rgba(255,255,255,0.8);
+          font-size: 13px; color: #0a1628;
+          outline: none;
+          transition: all 0.2s ease;
+        }
+        .search-input:focus {
+          border-color: #2563eb;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+        }
+        .search-input::placeholder { color: #93c5fd; }
+        .search-icon {
+          position: absolute; left: 11px; top: 50%;
+          transform: translateY(-50%);
+          color: #93c5fd; pointer-events: none;
+        }
+        .icon-btn {
+          width: 36px; height: 36px; border-radius: 9px;
+          display: flex; align-items: center; justify-content: center;
+          border: 1.5px solid transparent;
+          background: transparent;
+          color: #1d4ed8;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          position: relative;
+        }
+        .icon-btn:hover {
+          background: rgba(37,99,235,0.08);
+          border-color: rgba(37,99,235,0.2);
+          color: #2563eb;
+        }
+        .notif-badge {
+          position: absolute; top: -4px; right: -4px;
+          min-width: 18px; height: 18px;
+          border-radius: 9px;
+          background: linear-gradient(135deg, #ef4444, #f97316);
+          color: #fff; font-size: 10px; font-weight: 800;
+          display: flex; align-items: center; justify-content: center;
+          border: 2px solid #f0f6ff;
+          padding: 0 4px;
+        }
+        .user-pill {
+          display: flex; align-items: center; gap: 8px;
+          padding: 4px 10px 4px 4px;
+          border-radius: 24px;
+          border: 1.5px solid #bfdbfe;
+          background: rgba(255,255,255,0.7);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .user-pill:hover {
+          border-color: #2563eb;
+          background: #fff;
+          box-shadow: 0 2px 12px rgba(37,99,235,0.14);
+        }
+        .user-avatar {
+          width: 28px; height: 28px; border-radius: 50%;
+          background: linear-gradient(135deg, #2563eb, #06b6d4);
+          display: flex; align-items: center; justify-content: center;
+          color: #fff; font-size: 11px; font-weight: 800;
+          overflow: hidden; flex-shrink: 0;
+        }
+        .user-name { font-size: 13px; font-weight: 700; color: #0a1628; }
+        .user-balance {
+          font-size: 11px; color: #1d4ed8; font-weight: 600;
+        }
+        .auth-btn-login {
+          padding: 6px 14px; border-radius: 8px;
+          font-size: 13px; font-weight: 600;
+          color: #2563eb;
+          border: 1.5px solid #bfdbfe;
+          background: transparent;
+          cursor: pointer; transition: all 0.18s;
+          text-decoration: none; display: inline-flex; align-items: center;
+        }
+        .auth-btn-login:hover {
+          background: rgba(37,99,235,0.06);
+          border-color: #2563eb;
+        }
+        .auth-btn-register {
+          padding: 6px 14px; border-radius: 8px;
+          font-size: 13px; font-weight: 700;
+          color: #fff;
+          background: linear-gradient(135deg, #2563eb, #06b6d4);
+          border: none; cursor: pointer;
+          transition: all 0.18s;
+          text-decoration: none; display: inline-flex; align-items: center;
+          box-shadow: 0 2px 12px rgba(37,99,235,0.3);
+        }
+        .auth-btn-register:hover {
+          box-shadow: 0 4px 20px rgba(37,99,235,0.45);
+          transform: translateY(-1px);
+        }
+        /* Mobile search bar */
+        .mobile-search-bar {
+          border-top: 1px solid #bfdbfe;
+          padding: 10px 16px;
+          animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        /* Sheet nav */
+        .sheet-nav-link {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 14px; border-radius: 10px;
+          font-size: 14px; font-weight: 600; color: #1e40af;
+          text-decoration: none; transition: all 0.15s;
+        }
+        .sheet-nav-link:hover {
+          background: rgba(37,99,235,0.08); color: #2563eb;
+        }
+        .sheet-cat-link {
+          display: flex; align-items: center; gap: 8px;
+          padding: 7px 14px 7px 22px; border-radius: 8px;
+          font-size: 13px; color: #1d4ed8;
+          text-decoration: none; transition: all 0.15s;
+        }
+        .sheet-cat-link:hover {
+          background: rgba(37,99,235,0.06); color: #2563eb;
+        }
+        /* Dropdown overrides */
+        [data-radix-popper-content-wrapper] {
+          --tw-shadow: 0 8px 32px rgba(37,99,235,0.14) !important;
+        }
+      `}</style>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-1 md:flex">
-            <Link href="/products">
-              <Button variant="ghost" size="sm">
-                {t.nav.products}
-              </Button>
-            </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1">
-                  {t.categories.all}
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem asChild>
-                  <Link href="/products">{t.categories.all}</Link>
-                </DropdownMenuItem>
-                {categories.map((cat) => (
-                  <DropdownMenuItem key={cat.id} asChild>
-                    <Link href={`/products?category=${cat.id}`}>
-                      {cat.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Link href="/roblox">
-              <Button variant="ghost" size="sm" className="gap-1.5">
-                <span className="text-base leading-none">🟥</span>
-                Roblox
-              </Button>
-            </Link>
-            <Link href="/gacha">
-              <Button variant="ghost" size="sm">
-                {t.nav.gacha}
-              </Button>
-            </Link>
-          </nav>
+      <header className={`header-root${scrolled ? ' scrolled' : ''}`}>
+        <div className="header-inner">
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px' }}>
+            <div style={{ display: 'flex', height: 60, alignItems: 'center', gap: 12 }}>
 
-          {/* Search */}
-          <div className="hidden flex-1 max-w-md lg:flex">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={`${t.common.search}...`}
-                className="w-full pl-9"
-              />
-            </div>
-          </div>
+              {/* ── Logo ── */}
+              <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+                <div className="logo-orb">
+                  <ShoppingBag size={17} color="#fff" />
+                  <div className="logo-dot" />
+                </div>
+                <span className="logo-text hidden sm:inline">GameShop</span>
+              </Link>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            {/* Mobile Search Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSearchOpen(!searchOpen)}
-            >
-              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-            </Button>
+              {/* ── Desktop Nav ── */}
+              <nav style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 8 }} className="hidden md:flex">
+                <Link href="/products" className="nav-link">{t.nav.products}</Link>
 
-            {/* Language Toggle */}
-            <Button variant="ghost" size="icon" onClick={toggleLocale}>
-              <Globe className="h-5 w-5" />
-              <span className="sr-only">Toggle language</span>
-            </Button>
-
-            {user ? (
-              <>
-                {/* Notifications */}
-                <Link href="/notifications">
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
-                      >
-                        {unreadCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </Link>
-
-                {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="gap-2 px-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar} />
-                        <AvatarFallback>
-                          {user.displayName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="hidden flex-col items-start text-left sm:flex">
-                        <span className="text-sm font-medium">{user.displayName}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatPrice(user.balance, locale)}
-                        </span>
-                      </div>
-                      <ChevronDown className="hidden h-4 w-4 sm:block" />
-                    </Button>
+                    <button className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+                      {t.categories.all}
+                      <ChevronDown size={13} style={{ opacity: 0.6 }} />
+                    </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="px-2 py-1.5">
-                      <p className="text-sm font-medium">{user.displayName}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
-                    </div>
+                  <DropdownMenuContent align="start" style={{ minWidth: 180, borderColor: '#bfdbfe', boxShadow: '0 8px 32px rgba(37,99,235,0.14)' }}>
+                    <DropdownMenuItem asChild>
+                      <Link href="/products" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        🎮 {t.categories.all}
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="flex items-center gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        {t.nav.dashboard}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/wallet" className="flex items-center gap-2">
-                        <Wallet className="h-4 w-4" />
-                        {t.nav.wallet}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/orders" className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        {t.nav.orders}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        {t.nav.profile}
-                      </Link>
-                    </DropdownMenuItem>
-                    {user.role === 'admin' && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin" className="flex items-center gap-2">
-                            <Shield className="h-4 w-4" />
-                            {t.nav.admin}
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={logout}
-                      className="flex items-center gap-2 text-destructive focus:text-destructive"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {t.nav.logout}
-                    </DropdownMenuItem>
+                    {categories.map(cat => (
+                      <DropdownMenuItem key={cat.id} asChild>
+                        <Link href={`/products/${cat.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {cat.emoji} {cat.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    {t.nav.login}
-                  </Button>
+
+                <Link href="/roblox" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  🟥 Roblox
                 </Link>
-                <Link href="/register">
-                  <Button size="sm">{t.nav.register}</Button>
+                <Link href="/gacha" className="nav-link nav-link-special" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Zap size={13} />
+                  {t.nav.gacha}
                 </Link>
+              </nav>
+
+              {/* ── Search ── */}
+              <div className="search-wrap hidden lg:flex" style={{ marginLeft: 'auto', marginRight: 8 }}>
+                <Search size={15} className="search-icon" />
+                <input type="search" placeholder={`${t.common.search}...`} className="search-input" />
               </div>
-            )}
 
-            {/* Mobile Menu */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-80">
-                <nav className="flex flex-col gap-4 pt-8">
-                  <Link
-                    href="/products"
-                    className="text-lg font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {t.nav.products}
-                  </Link>
-                  <div className="space-y-1">
-                    <Link
-                      href="/products"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      🎮 {t.categories.all}
+              {/* ── Right Actions ── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }} className="lg:ml-0">
+
+                {/* Mobile search toggle */}
+                <button className="icon-btn lg:hidden" onClick={() => setSearchOpen(!searchOpen)}>
+                  {searchOpen ? <X size={17} /> : <Search size={17} />}
+                </button>
+
+                {/* Language */}
+                <button className="icon-btn" onClick={toggleLocale} title="Toggle language">
+                  <Globe size={17} />
+                </button>
+
+                {user ? (
+                  <>
+                    {/* Notifications */}
+                    <Link href="/notifications" style={{ textDecoration: 'none' }}>
+                      <button className="icon-btn">
+                        <Bell size={17} />
+                        {unreadCount > 0 && (
+                          <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                        )}
+                      </button>
                     </Link>
-                    {categories.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        href={`/products?category=${cat.id}`}
-                        className="block rounded-lg py-1.5 pl-6 text-sm hover:text-primary transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {cat.label}
-                      </Link>
-                    ))}
-                  </div>
-                  <Link
-                    href="/roblox"
-                    className="flex items-center gap-2 text-lg font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span>🟥</span> Roblox
-                  </Link>
-                  <Link
-                    href="/gacha"
-                    className="text-lg font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {t.nav.gacha}
-                  </Link>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
 
-        {/* Mobile Search Bar */}
-        {searchOpen && (
-          <div className="border-t py-3 lg:hidden">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={`${t.common.search}...`}
-                className="w-full pl-9"
-                autoFocus
-              />
+                    {/* User dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <div className="user-pill">
+                          <div className="user-avatar">
+                            {user.avatar
+                              ? <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : user.displayName.charAt(0).toUpperCase()
+                            }
+                          </div>
+                          <div className="hidden sm:flex flex-col" style={{ lineHeight: 1 }}>
+                            <span className="user-name">{user.displayName}</span>
+                            <span className="user-balance">{formatPrice(user.balance, locale)}</span>
+                          </div>
+                          <ChevronDown size={13} style={{ color: '#93c5fd' }} className="hidden sm:block" />
+                        </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" style={{ width: 220, borderColor: '#bfdbfe', boxShadow: '0 8px 32px rgba(37,99,235,0.14)' }}>
+                        {/* User header */}
+                        <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid #e0f2fe' }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#0a1628' }}>{user.displayName}</div>
+                          <div style={{ fontSize: 11, color: '#60a5fa', marginTop: 2 }}>{user.email}</div>
+                          <div style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#fff', background: 'linear-gradient(90deg,#2563eb,#06b6d4)', padding: '3px 10px', borderRadius: 20 }}>
+                            <Wallet size={10} /> {formatPrice(user.balance, locale)}
+                          </div>
+                        </div>
+                        <DropdownMenuItem asChild>
+                          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <LayoutDashboard size={14} style={{ color: '#2563eb' }} />
+                            {t.nav.dashboard}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/wallet" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Wallet size={14} style={{ color: '#06b6d4' }} />
+                            {t.nav.wallet}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/orders" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Package size={14} style={{ color: '#2563eb' }} />
+                            {t.nav.orders}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <User size={14} style={{ color: '#2563eb' }} />
+                            {t.nav.profile}
+                          </Link>
+                        </DropdownMenuItem>
+                        {user.role === 'admin' && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7c3aed' }}>
+                                <Shield size={14} />
+                                {t.nav.admin}
+                              </Link>
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={logout}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', cursor: 'pointer' }}
+                        >
+                          <LogOut size={14} />
+                          {t.nav.logout}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Link href="/login" className="auth-btn-login">{t.nav.login}</Link>
+                    <Link href="/register" className="auth-btn-register">{t.nav.register}</Link>
+                  </div>
+                )}
+
+                {/* Mobile menu */}
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                  <SheetTrigger asChild>
+                    <button className="icon-btn md:hidden">
+                      <Menu size={18} />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="right" style={{ width: 300, background: '#f0f6ff', borderLeft: '1px solid #bfdbfe' }}>
+                    <SheetTitle className="sr-only">เมนูนำทาง</SheetTitle>
+                    <div style={{ paddingTop: 24, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {/* Branding */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px 16px', borderBottom: '1px solid #bfdbfe', marginBottom: 8 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#2563eb,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <ShoppingBag size={15} color="#fff" />
+                        </div>
+                        <span style={{ fontWeight: 800, fontSize: 16, background: 'linear-gradient(90deg,#2563eb,#06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>GameShop</span>
+                      </div>
+
+                      <Link href="/products" className="sheet-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                        🎮 {t.nav.products}
+                      </Link>
+
+                      <div style={{ padding: '4px 0' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#93c5fd', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 14px 6px' }}>หมวดหมู่</div>
+                        {categories.map(cat => (
+                          <Link key={cat.id} href={`/products/${cat.id}`} className="sheet-cat-link" onClick={() => setMobileMenuOpen(false)}>
+                            {cat.emoji} {cat.label}
+                          </Link>
+                        ))}
+                      </div>
+
+                      <Link href="/roblox" className="sheet-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                        🟥 Roblox
+                      </Link>
+                      <Link href="/gacha" className="sheet-nav-link" style={{ color: '#c2410c', background: 'rgba(239,68,68,0.06)' }} onClick={() => setMobileMenuOpen(false)}>
+                        <Zap size={15} style={{ color: '#f97316' }} />
+                        {t.nav.gacha}
+                      </Link>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
           </div>
-        )}
-      </div>
-    </header>
+
+          {/* Mobile Search Bar */}
+          {searchOpen && (
+            <div className="mobile-search-bar">
+              <div style={{ position: 'relative' }}>
+                <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#93c5fd' }} />
+                <input type="search" placeholder={`${t.common.search}...`} className="search-input" autoFocus style={{ width: '100%' }} />
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
+    </>
   )
 }

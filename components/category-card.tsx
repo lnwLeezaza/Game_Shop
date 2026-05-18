@@ -17,7 +17,7 @@ export function CategoryCard({ id, name, count, icon, gradient }: CategoryCardPr
   const { locale } = useLocale()
 
   return (
-    <Link href={`/products?category=${id}`}>
+    <Link href={`/products/${id}`}>
       <Card className={`group h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${gradient}`}>
         <CardContent className="flex flex-col items-center justify-center p-6 text-center text-white">
           <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur">

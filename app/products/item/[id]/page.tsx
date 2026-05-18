@@ -177,13 +177,19 @@ export default function ProductDetailPage({
             <div className="space-y-6">
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className={categoryColors[product.category]}>
-                    {t.categories[product.category as keyof typeof t.categories]}
+                <Badge variant="outline" className={categoryColors[product.category]}>
+                  {t.categories[product.category as keyof typeof t.categories]}
+                </Badge>
+                <Badge variant="secondary">
+                  {t.productTypes[product.type as keyof typeof t.productTypes]}
+                </Badge>
+                {(product as any).is_on_sale && (
+                  <Badge className="gap-1 bg-red-500 text-white hover:bg-red-600">
+                    🔥 กำลังลดราคา
+                    {discount > 0 && ` -${discount}%`}
                   </Badge>
-                  <Badge variant="secondary">
-                    {t.productTypes[product.type as keyof typeof t.productTypes]}
-                  </Badge>
-                </div>
+                )}
+              </div>
                 <h1 className="text-2xl font-bold lg:text-3xl">{product.title}</h1>
                 <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -196,16 +202,33 @@ export default function ProductDetailPage({
 
               {/* Price */}
               <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-bold text-primary">
-                    {formatPrice(product.price, locale)}
-                  </span>
-                  {product.originalPrice && product.originalPrice > product.price && (
-                    <span className="text-lg text-muted-foreground line-through">
-                      {formatPrice(product.originalPrice, locale)}
-                    </span>
-                  )}
-                </div>
+  {(product as any).is_on_sale && (
+    <div className="mb-3 flex items-center gap-2 rounded-lg px-3 py-2"
+      style={{ background: 'linear-gradient(90deg, #fef2f2, #fff7ed)', border: '1px solid #fca5a5' }}>
+      <span className="text-sm">🏷️</span>
+      <span className="text-sm font-bold text-red-600">สินค้านี้กำลังอยู่ในโปรโมชั่น</span>
+      {discount > 0 && (
+        <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-black text-white">
+          ลด {discount}%
+        </span>
+      )}
+    </div>
+  )}
+  <div className="flex items-baseline gap-3">
+    <span className="text-3xl font-bold text-primary">
+      {formatPrice(product.price, locale)}
+    </span>
+    {product.originalPrice && product.originalPrice > product.price && (
+      <span className="text-lg text-muted-foreground line-through">
+        {formatPrice(product.originalPrice, locale)}
+      </span>
+    )}
+    {product.originalPrice && product.originalPrice > product.price && (
+      <span className="text-sm font-bold text-green-600">
+        ประหยัด {formatPrice(product.originalPrice - product.price, locale)}
+      </span>
+    )}
+  </div>
                 {user && (
                   <p className="mt-2 text-sm text-muted-foreground">
                     {locale === 'th' ? 'ยอดเงินของคุณ:' : 'Your balance:'}{' '}

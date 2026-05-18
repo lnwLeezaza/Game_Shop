@@ -38,6 +38,9 @@ views: number
   createdAt: string
   updatedAt: string
   stockPool?: string
+  is_on_sale?: boolean        // ← เพิ่ม
+  discount_percent?: number   // ← เพิ่ม
+
 }
 
 // ==================== Order Types ====================
