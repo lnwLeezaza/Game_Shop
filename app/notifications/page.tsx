@@ -10,6 +10,7 @@ import { useAuthStore, useNotificationStore } from '@/lib/store'
 import { useLocale } from '@/hooks/use-locale'
 import type { Notification } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { useNotificationsWS } from '@/hooks/use-notifications-ws'
 
 const typeIcon: Record<Notification['type'], React.ReactNode> = {
   order: <Package className="w-5 h-5 text-blue-500" />,
@@ -24,7 +25,8 @@ export default function NotificationsPage() {
   const { user } = useAuthStore()
   const { notifications, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore()
   const { locale } = useLocale()
-
+  useNotificationsWS(user?.id ?? '')
+  
   useEffect(() => {
     if (!user) { router.push('/login'); return }
     fetchNotifications(user.id)
