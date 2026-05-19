@@ -33,11 +33,6 @@ export default function LoginPage() {
     }
   }
 
-  const demoAccounts = [
-    { email: 'buyer@example.com', password: 'password', label: th ? '👤 ผู้ซื้อ' : '👤 Buyer', color: '#2563eb' },
-    { email: 'seller@example.com', password: 'password', label: th ? '🏪 ผู้ขาย' : '🏪 Seller', color: '#059669' },
-    { email: 'admin@example.com', password: 'password', label: '🛡️ Admin', color: '#7c3aed' },
-  ]
 
   return (
     <div style={{
@@ -163,31 +158,6 @@ export default function LoginPage() {
                 }
               </button>
             </form>
-
-            {/* Demo accounts */}
-            <div style={{ marginTop: '18px' }}>
-              <p style={{ fontSize: '10px', color: '#60a5fa', fontFamily: 'monospace', textAlign: 'center', marginBottom: '9px', letterSpacing: '0.1em' }}>
-                // DEMO_ACCOUNTS (password: password)
-              </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {demoAccounts.map(a => (
-                  <button
-                    key={a.email}
-                    type="button"
-                    onClick={() => { setEmail(a.email); setPassword(a.password) }}
-                    style={{
-                      flex: 1, padding: '7px 4px',
-                      background: '#f0f8ff', border: '1px solid #bfdbfe',
-                      borderRadius: '6px', cursor: 'pointer',
-                      fontSize: '10px', color: a.color, fontFamily: 'monospace',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {a.label}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <hr style={{ border: 'none', borderTop: '1px solid #bfdbfe', margin: '16px 0' }} />
 
