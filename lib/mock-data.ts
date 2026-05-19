@@ -10,7 +10,6 @@ import type {
   Notification,
 } from './types'
 
-// ==================== Mock Users ====================
 export const mockUsers: User[] = [
   {
     id: 'user-1',
@@ -23,6 +22,10 @@ export const mockUsers: User[] = [
     kycStatus: 'verified',
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-03-01T08:00:00Z',
+    tier: 'bronze',
+    lifetimePoints: 0,
+    balancePoints: 0,
+    lastActivityAt: '2024-03-01T08:00:00Z',
   },
   {
     id: 'user-2',
@@ -35,6 +38,10 @@ export const mockUsers: User[] = [
     kycStatus: 'verified',
     createdAt: '2023-06-01T10:00:00Z',
     updatedAt: '2024-03-10T12:00:00Z',
+    tier: 'gold',
+    lifetimePoints: 0,
+    balancePoints: 0,
+    lastActivityAt: '2024-03-10T12:00:00Z',
   },
   {
     id: 'user-3',
@@ -47,6 +54,10 @@ export const mockUsers: User[] = [
     kycStatus: 'verified',
     createdAt: '2023-01-01T10:00:00Z',
     updatedAt: '2024-03-15T10:00:00Z',
+    tier: 'vip',
+    lifetimePoints: 0,
+    balancePoints: 0,
+    lastActivityAt: '2024-03-15T10:00:00Z',
   },
 ]
 
