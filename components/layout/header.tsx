@@ -1,24 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Bell,
-  ChevronDown,
-  Globe,
-  LogOut,
-  Menu,
-  Search,
-  ShoppingBag,
-  User,
-  Wallet,
-  X,
-  LayoutDashboard,
-  Shield,
-  Package,
-  Zap,
+  Bell, ChevronDown, Globe, LogOut, Menu, Search,
+  ShoppingBag, User, Wallet, X, LayoutDashboard,
+  Shield, Package, Zap, Coins,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,21 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useAuthStore, useNotificationStore } from '@/lib/store'
 import { useLocale, formatPrice } from '@/hooks/use-locale'
-
-const categories = [
-  { id: 'rov',      label: 'ROV',       emoji: '⚔️' },
-  { id: 'freefire', label: 'Free Fire', emoji: '🔥' },
-  { id: 'efootball',label: 'eFootball', emoji: '⚽' },
-  { id: 'pubg',     label: 'PUBG',      emoji: '🎯' },
-  { id: 'genshin',  label: 'Genshin',   emoji: '✨' },
-  { id: 'roblox',   label: 'Roblox',    emoji: '🟥' },
-]
 
 export function Header() {
   const { user, logout, refreshUser } = useAuthStore()
@@ -59,7 +35,6 @@ export function Header() {
   useEffect(() => {
     if (!user) return
     fetchNotifications(user.id)
-
     let cleanup: (() => void) | undefined
     const setupRealtime = async () => {
       try {
@@ -95,12 +70,9 @@ export function Header() {
           border-bottom: 1px solid rgba(191,219,254,0.7);
         }
         .logo-orb {
-          position: relative;
-          width: 36px; height: 36px;
-          border-radius: 10px;
+          position: relative; width: 36px; height: 36px; border-radius: 10px;
           background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 0 0 0 rgba(37,99,235,0.4);
           transition: box-shadow 0.3s ease, transform 0.2s ease;
         }
         .logo-orb:hover {
@@ -110,13 +82,12 @@ export function Header() {
         .logo-dot {
           position: absolute; top: -3px; right: -3px;
           width: 10px; height: 10px; border-radius: 50%;
-          background: #22c55e;
-          border: 2px solid #f0f6ff;
+          background: #22c55e; border: 2px solid #f0f6ff;
           animation: pulse-dot 2s ease-in-out infinite;
         }
         @keyframes pulse-dot {
           0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
-          50% { box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+          50%       { box-shadow: 0 0 0 4px rgba(34,197,94,0); }
         }
         .logo-text {
           background: linear-gradient(90deg, #2563eb, #06b6d4);
@@ -124,165 +95,98 @@ export function Header() {
           -webkit-text-fill-color: transparent;
           font-size: 18px; font-weight: 800; letter-spacing: -0.03em;
         }
-        .nav-link {
-          position: relative;
-          padding: 6px 12px; border-radius: 8px;
-          font-size: 13px; font-weight: 600;
-          color: #1e40af;
-          text-decoration: none;
-          transition: all 0.18s ease;
-          white-space: nowrap;
+        .nav-btn {
+          display: flex; align-items: center; gap: 7px;
+          padding: 7px 18px; border-radius: 10px;
+          font-size: 13px; font-weight: 700;
+          text-decoration: none; white-space: nowrap;
+          transition: all 0.18s ease; cursor: pointer;
         }
-        .nav-link:hover {
-          color: #2563eb;
-          background: rgba(37,99,235,0.08);
-        }
-        .nav-link.active {
-          color: #2563eb;
-          background: rgba(37,99,235,0.1);
-        }
-        .nav-link-special {
-          background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(249,115,22,0.1));
-          border: 1px solid rgba(249,115,22,0.25);
-          color: #c2410c;
-        }
-        .nav-link-special:hover {
-          background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(249,115,22,0.18));
-          color: #ea580c;
-        }
-        .search-wrap {
-          position: relative; flex: 1; max-width: 320px;
-        }
-        .search-input {
-          width: 100%;
-          padding: 7px 12px 7px 36px;
-          border-radius: 10px;
+        .nav-topup {
+          background: rgba(255,255,255,0.7);
           border: 1.5px solid #bfdbfe;
-          background: rgba(255,255,255,0.8);
-          font-size: 13px; color: #0a1628;
-          outline: none;
-          transition: all 0.2s ease;
+          color: #1d4ed8;
         }
-        .search-input:focus {
-          border-color: #2563eb;
-          background: #fff;
-          box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+        .nav-topup:hover {
+          background: #fff; border-color: #2563eb;
+          box-shadow: 0 2px 14px rgba(37,99,235,0.16);
+          transform: translateY(-1px);
         }
-        .search-input::placeholder { color: #93c5fd; }
-        .search-icon {
-          position: absolute; left: 11px; top: 50%;
-          transform: translateY(-50%);
-          color: #93c5fd; pointer-events: none;
+        .nav-gacha {
+          background: linear-gradient(135deg, #ef4444, #f97316);
+          border: 1.5px solid transparent;
+          color: #fff;
+          box-shadow: 0 2px 14px rgba(239,68,68,0.28);
+        }
+        .nav-gacha:hover {
+          box-shadow: 0 4px 22px rgba(239,68,68,0.45);
+          transform: translateY(-1px);
         }
         .icon-btn {
           width: 36px; height: 36px; border-radius: 9px;
           display: flex; align-items: center; justify-content: center;
-          border: 1.5px solid transparent;
-          background: transparent;
-          color: #1d4ed8;
-          cursor: pointer;
-          transition: all 0.18s ease;
-          position: relative;
+          border: 1.5px solid transparent; background: transparent;
+          color: #1d4ed8; cursor: pointer;
+          transition: all 0.18s ease; position: relative;
         }
         .icon-btn:hover {
-          background: rgba(37,99,235,0.08);
-          border-color: rgba(37,99,235,0.2);
-          color: #2563eb;
+          background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.2); color: #2563eb;
         }
         .notif-badge {
           position: absolute; top: -4px; right: -4px;
-          min-width: 18px; height: 18px;
-          border-radius: 9px;
+          min-width: 18px; height: 18px; border-radius: 9px;
           background: linear-gradient(135deg, #ef4444, #f97316);
           color: #fff; font-size: 10px; font-weight: 800;
           display: flex; align-items: center; justify-content: center;
-          border: 2px solid #f0f6ff;
-          padding: 0 4px;
+          border: 2px solid #f0f6ff; padding: 0 4px;
         }
         .user-pill {
           display: flex; align-items: center; gap: 8px;
-          padding: 4px 10px 4px 4px;
-          border-radius: 24px;
-          border: 1.5px solid #bfdbfe;
-          background: rgba(255,255,255,0.7);
-          cursor: pointer;
-          transition: all 0.2s ease;
+          padding: 4px 10px 4px 4px; border-radius: 24px;
+          border: 1.5px solid #bfdbfe; background: rgba(255,255,255,0.7);
+          cursor: pointer; transition: all 0.2s ease;
         }
-        .user-pill:hover {
-          border-color: #2563eb;
-          background: #fff;
-          box-shadow: 0 2px 12px rgba(37,99,235,0.14);
-        }
+        .user-pill:hover { border-color: #2563eb; background: #fff; box-shadow: 0 2px 12px rgba(37,99,235,0.14); }
         .user-avatar {
           width: 28px; height: 28px; border-radius: 50%;
           background: linear-gradient(135deg, #2563eb, #06b6d4);
           display: flex; align-items: center; justify-content: center;
-          color: #fff; font-size: 11px; font-weight: 800;
-          overflow: hidden; flex-shrink: 0;
+          color: #fff; font-size: 11px; font-weight: 800; overflow: hidden; flex-shrink: 0;
         }
-        .user-name { font-size: 13px; font-weight: 700; color: #0a1628; }
-        .user-balance {
-          font-size: 11px; color: #1d4ed8; font-weight: 600;
-        }
+        .user-name    { font-size: 13px; font-weight: 700; color: #0a1628; }
+        .user-balance { font-size: 11px; color: #1d4ed8; font-weight: 600; }
         .auth-btn-login {
-          padding: 6px 14px; border-radius: 8px;
-          font-size: 13px; font-weight: 600;
-          color: #2563eb;
-          border: 1.5px solid #bfdbfe;
-          background: transparent;
+          padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+          color: #2563eb; border: 1.5px solid #bfdbfe; background: transparent;
           cursor: pointer; transition: all 0.18s;
           text-decoration: none; display: inline-flex; align-items: center;
         }
-        .auth-btn-login:hover {
-          background: rgba(37,99,235,0.06);
-          border-color: #2563eb;
-        }
+        .auth-btn-login:hover { background: rgba(37,99,235,0.06); border-color: #2563eb; }
         .auth-btn-register {
-          padding: 6px 14px; border-radius: 8px;
-          font-size: 13px; font-weight: 700;
-          color: #fff;
-          background: linear-gradient(135deg, #2563eb, #06b6d4);
-          border: none; cursor: pointer;
-          transition: all 0.18s;
+          padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
+          color: #fff; background: linear-gradient(135deg, #2563eb, #06b6d4);
+          border: none; cursor: pointer; transition: all 0.18s;
           text-decoration: none; display: inline-flex; align-items: center;
           box-shadow: 0 2px 12px rgba(37,99,235,0.3);
         }
-        .auth-btn-register:hover {
-          box-shadow: 0 4px 20px rgba(37,99,235,0.45);
-          transform: translateY(-1px);
+        .auth-btn-register:hover { box-shadow: 0 4px 20px rgba(37,99,235,0.45); transform: translateY(-1px); }
+        .search-input {
+          width: 100%; padding: 7px 12px 7px 36px; border-radius: 10px;
+          border: 1.5px solid #bfdbfe; background: rgba(255,255,255,0.8);
+          font-size: 13px; color: #0a1628; outline: none; transition: all 0.2s ease;
         }
-        /* Mobile search bar */
-        .mobile-search-bar {
-          border-top: 1px solid #bfdbfe;
-          padding: 10px 16px;
-          animation: slideDown 0.2s ease;
-        }
+        .search-input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+        .search-input::placeholder { color: #93c5fd; }
+        .mobile-search-bar { border-top: 1px solid #bfdbfe; padding: 10px 16px; animation: slideDown 0.2s ease; }
         @keyframes slideDown {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        /* Sheet nav */
-        .sheet-nav-link {
+        .sheet-nav-btn {
           display: flex; align-items: center; gap: 10px;
-          padding: 10px 14px; border-radius: 10px;
-          font-size: 14px; font-weight: 600; color: #1e40af;
-          text-decoration: none; transition: all 0.15s;
-        }
-        .sheet-nav-link:hover {
-          background: rgba(37,99,235,0.08); color: #2563eb;
-        }
-        .sheet-cat-link {
-          display: flex; align-items: center; gap: 8px;
-          padding: 7px 14px 7px 22px; border-radius: 8px;
-          font-size: 13px; color: #1d4ed8;
-          text-decoration: none; transition: all 0.15s;
-        }
-        .sheet-cat-link:hover {
-          background: rgba(37,99,235,0.06); color: #2563eb;
-        }
-        /* Dropdown overrides */
-        [data-radix-popper-content-wrapper] {
-          --tw-shadow: 0 8px 32px rgba(37,99,235,0.14) !important;
+          padding: 12px 16px; border-radius: 12px;
+          font-size: 14px; font-weight: 700;
+          text-decoration: none; transition: all 0.15s; border: none; cursor: pointer;
         }
       `}</style>
 
@@ -301,82 +205,48 @@ export function Header() {
               </Link>
 
               {/* ── Desktop Nav ── */}
-              <nav style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 8 }} className="hidden md:flex">
-                <Link href="/products" className="nav-link">{t.nav.products}</Link>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-                      {t.categories.all}
-                      <ChevronDown size={13} style={{ opacity: 0.6 }} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" style={{ minWidth: 180, borderColor: '#bfdbfe', boxShadow: '0 8px 32px rgba(37,99,235,0.14)' }}>
-                    <DropdownMenuItem asChild>
-                      <Link href="/products" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        🎮 {t.categories.all}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {categories.map(cat => (
-                      <DropdownMenuItem key={cat.id} asChild>
-                        <Link href={`/products/${cat.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {cat.emoji} {cat.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <Link href="/roblox" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  🟥 Roblox
+              <nav style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 16 }} className="hidden md:flex">
+                <Link href="/products" className="nav-btn nav-topup">
+                  <Coins size={14} /> เติมเกม
                 </Link>
-                <Link href="/gacha" className="nav-link nav-link-special" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Zap size={13} />
-                  {t.nav.gacha}
+                <Link href="/gacha" className="nav-btn nav-gacha">
+                  <Zap size={14} /> สุ่มไอดี
                 </Link>
               </nav>
 
               {/* ── Search ── */}
-              <div className="search-wrap hidden lg:flex" style={{ marginLeft: 'auto', marginRight: 8 }}>
-                <Search size={15} className="search-icon" />
-                <input type="search" placeholder={`${t.common.search}...`} className="search-input" />
+              <div style={{ position: 'relative', flex: 1, maxWidth: 280, marginLeft: 'auto', marginRight: 8 }} className="hidden lg:flex">
+                <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#93c5fd', pointerEvents: 'none' }} />
+                <input type="search" placeholder="ค้นหาเกม..." className="search-input" />
               </div>
 
               {/* ── Right Actions ── */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }} className="lg:ml-0">
 
-                {/* Mobile search toggle */}
                 <button className="icon-btn lg:hidden" onClick={() => setSearchOpen(!searchOpen)}>
                   {searchOpen ? <X size={17} /> : <Search size={17} />}
                 </button>
 
-                {/* Language */}
                 <button className="icon-btn" onClick={toggleLocale} title="Toggle language">
                   <Globe size={17} />
                 </button>
 
                 {user ? (
                   <>
-                    {/* Notifications */}
                     <Link href="/notifications" style={{ textDecoration: 'none' }}>
                       <button className="icon-btn">
                         <Bell size={17} />
-                        {unreadCount > 0 && (
-                          <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-                        )}
+                        {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                       </button>
                     </Link>
 
-                    {/* User dropdown */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <div className="user-pill">
                           <div className="user-avatar">
                             {user.avatar
                               ? <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              : user.displayName.charAt(0).toUpperCase()
-                            }
+                              : user.displayName.charAt(0).toUpperCase()}
                           </div>
                           <div className="hidden sm:flex flex-col" style={{ lineHeight: 1 }}>
                             <span className="user-name">{user.displayName}</span>
@@ -386,7 +256,6 @@ export function Header() {
                         </div>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" style={{ width: 220, borderColor: '#bfdbfe', boxShadow: '0 8px 32px rgba(37,99,235,0.14)' }}>
-                        {/* User header */}
                         <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid #e0f2fe' }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#0a1628' }}>{user.displayName}</div>
                           <div style={{ fontSize: 11, color: '#60a5fa', marginTop: 2 }}>{user.email}</div>
@@ -396,26 +265,22 @@ export function Header() {
                         </div>
                         <DropdownMenuItem asChild>
                           <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <LayoutDashboard size={14} style={{ color: '#2563eb' }} />
-                            {t.nav.dashboard}
+                            <LayoutDashboard size={14} style={{ color: '#2563eb' }} /> {t.nav.dashboard}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/wallet" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Wallet size={14} style={{ color: '#06b6d4' }} />
-                            {t.nav.wallet}
+                            <Wallet size={14} style={{ color: '#06b6d4' }} /> {t.nav.wallet}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/orders" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Package size={14} style={{ color: '#2563eb' }} />
-                            {t.nav.orders}
+                            <Package size={14} style={{ color: '#2563eb' }} /> {t.nav.orders}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <User size={14} style={{ color: '#2563eb' }} />
-                            {t.nav.profile}
+                            <User size={14} style={{ color: '#2563eb' }} /> {t.nav.profile}
                           </Link>
                         </DropdownMenuItem>
                         {user.role === 'admin' && (
@@ -423,19 +288,14 @@ export function Header() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                               <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7c3aed' }}>
-                                <Shield size={14} />
-                                {t.nav.admin}
+                                <Shield size={14} /> {t.nav.admin}
                               </Link>
                             </DropdownMenuItem>
                           </>
                         )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={logout}
-                          style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', cursor: 'pointer' }}
-                        >
-                          <LogOut size={14} />
-                          {t.nav.logout}
+                        <DropdownMenuItem onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', cursor: 'pointer' }}>
+                          <LogOut size={14} /> {t.nav.logout}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -450,40 +310,28 @@ export function Header() {
                 {/* Mobile menu */}
                 <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                   <SheetTrigger asChild>
-                    <button className="icon-btn md:hidden">
-                      <Menu size={18} />
-                    </button>
+                    <button className="icon-btn md:hidden"><Menu size={18} /></button>
                   </SheetTrigger>
-                  <SheetContent side="right" style={{ width: 300, background: '#f0f6ff', borderLeft: '1px solid #bfdbfe' }}>
+                  <SheetContent side="right" style={{ width: 280, background: '#f0f6ff', borderLeft: '1px solid #bfdbfe' }}>
                     <SheetTitle className="sr-only">เมนูนำทาง</SheetTitle>
-                    <div style={{ paddingTop: 24, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {/* Branding */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px 16px', borderBottom: '1px solid #bfdbfe', marginBottom: 8 }}>
+                    <div style={{ paddingTop: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px 16px', borderBottom: '1px solid #bfdbfe', marginBottom: 4 }}>
                         <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#2563eb,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <ShoppingBag size={15} color="#fff" />
                         </div>
                         <span style={{ fontWeight: 800, fontSize: 16, background: 'linear-gradient(90deg,#2563eb,#06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>GameShop</span>
                       </div>
 
-                      <Link href="/products" className="sheet-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                        🎮 {t.nav.products}
+                      <Link href="/products" className="sheet-nav-btn"
+                        style={{ background: 'rgba(255,255,255,0.8)', border: '1.5px solid #bfdbfe', color: '#1d4ed8' }}
+                        onClick={() => setMobileMenuOpen(false)}>
+                        <Coins size={16} /> เติมเกม
                       </Link>
 
-                      <div style={{ padding: '4px 0' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#93c5fd', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 14px 6px' }}>หมวดหมู่</div>
-                        {categories.map(cat => (
-                          <Link key={cat.id} href={`/products/${cat.id}`} className="sheet-cat-link" onClick={() => setMobileMenuOpen(false)}>
-                            {cat.emoji} {cat.label}
-                          </Link>
-                        ))}
-                      </div>
-
-                      <Link href="/roblox" className="sheet-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                        🟥 Roblox
-                      </Link>
-                      <Link href="/gacha" className="sheet-nav-link" style={{ color: '#c2410c', background: 'rgba(239,68,68,0.06)' }} onClick={() => setMobileMenuOpen(false)}>
-                        <Zap size={15} style={{ color: '#f97316' }} />
-                        {t.nav.gacha}
+                      <Link href="/gacha" className="sheet-nav-btn"
+                        style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)', color: '#fff', boxShadow: '0 2px 14px rgba(239,68,68,0.28)' }}
+                        onClick={() => setMobileMenuOpen(false)}>
+                        <Zap size={16} /> สุ่มไอดี
                       </Link>
                     </div>
                   </SheetContent>
@@ -492,12 +340,11 @@ export function Header() {
             </div>
           </div>
 
-          {/* Mobile Search Bar */}
           {searchOpen && (
             <div className="mobile-search-bar">
               <div style={{ position: 'relative' }}>
                 <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#93c5fd' }} />
-                <input type="search" placeholder={`${t.common.search}...`} className="search-input" autoFocus style={{ width: '100%' }} />
+                <input type="search" placeholder="ค้นหาเกม..." className="search-input" autoFocus style={{ width: '100%' }} />
               </div>
             </div>
           )}
