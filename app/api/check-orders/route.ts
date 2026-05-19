@@ -9,12 +9,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const EMAIL_ACCOUNTS = JSON.parse(process.env.GMAIL_ACCOUNTS ?? '[]') as {
-  user: string
-  pass: string
-  productId?: string
-}[]
-
+let EMAIL_ACCOUNTS: { user: string; pass: string; productId?: string }[] = []
+try {
+  EMAIL_ACCOUNTS = JSON.parse(process.env.GMAIL_ACCOUNTS ?? '[]')
+} catch {
+  EMAIL_ACCOUNTS = []
+}
 async function pushNotificationToUser(userId: string, payload: {
   title: string; titleTh: string; message: string; messageTh: string; type: string
 }) {
