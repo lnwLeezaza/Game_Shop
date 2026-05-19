@@ -13,7 +13,14 @@ export interface User {
   kycStatus: KYCStatus
   createdAt: string
   updatedAt: string
+  tier: 'bronze' | 'silver' | 'gold' | 'vip'
+  lifetimePoints: number
+  balancePoints: number
+  lastActivityAt: string
 }
+
+// ==================== Product Types ====================
+// ... ที่เหลือเหมือนเดิม
 
 // ==================== Product Types ====================
 export type GameCategory = 'rov' | 'freefire' | 'efootball' | 'pubg' | 'genshin' | 'roblox' | 'other'
@@ -81,6 +88,7 @@ export interface Transaction {
   referenceId?: string
   createdAt: string
 }
+
 
 // ==================== Gacha Types ====================
 export type GachaRarity = 'common' | 'rare' | 'epic' | 'legendary'

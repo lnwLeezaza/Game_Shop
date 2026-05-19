@@ -357,6 +357,16 @@ export default function GameTopupPage({ params }: { params: Promise<{ slug: stri
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? "เกิดข้อผิดพลาด"); setSubmitting(false); return }
+          const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env['NEXT_PUBLIC_SUPABASE_URL'] as string,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] as string
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.rpc('add_loyalty_points', { p_user_id: user.id, p_points: 10 })
+    }
+
       setBalance(data.balanceAfter); setWonddOrderId(data.wonddOrderId ?? ""); setStep("status")
     } catch { setError("เกิดข้อผิดพลาด กรุณาลองใหม่") } finally { setSubmitting(false) }
   }, [selectedPkg, playerId, serverId, game.apiCode])

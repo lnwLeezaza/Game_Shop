@@ -9,5 +9,11 @@
     "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
     "RESEND_API_KEY": "@resend_api_key",
     "NEXT_PUBLIC_APP_URL": "@app_url"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/inactivity",
+      "schedule": "0 19 * * *"
+    }
+  ]
 }

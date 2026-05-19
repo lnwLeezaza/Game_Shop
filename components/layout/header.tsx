@@ -259,9 +259,49 @@ export function Header() {
                         <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid #e0f2fe' }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#0a1628' }}>{user.displayName}</div>
                           <div style={{ fontSize: 11, color: '#60a5fa', marginTop: 2 }}>{user.email}</div>
-                          <div style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#fff', background: 'linear-gradient(90deg,#2563eb,#06b6d4)', padding: '3px 10px', borderRadius: 20 }}>
-                            <Wallet size={10} /> {formatPrice(user.balance, locale)}
-                          </div>
+                          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+  {/* Balance */}
+  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#fff', background: 'linear-gradient(90deg,#2563eb,#06b6d4)', padding: '3px 10px', borderRadius: 20 }}>
+    <Wallet size={10} /> {formatPrice(user.balance, locale)}
+  </div>
+
+  {/* Tier badge */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <span style={{
+      fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 20,
+      background: user.tier === 'vip' ? 'linear-gradient(135deg,#d97706,#f59e0b)'
+                : user.tier === 'gold' ? 'linear-gradient(135deg,#ca8a04,#eab308)'
+                : user.tier === 'silver' ? 'linear-gradient(135deg,#64748b,#94a3b8)'
+                : 'linear-gradient(135deg,#92400e,#b45309)',
+      color: '#fff',
+    }}>
+      {user.tier === 'vip' ? '👑 VIP'
+     : user.tier === 'gold' ? '🥇 Gold'
+     : user.tier === 'silver' ? '🥈 Silver'
+     : '🥉 Bronze'}
+    </span>
+    <span style={{ fontSize: 10, color: '#64748b' }}>{user.lifetimePoints} pt</span>
+  </div>
+
+{/* Progress bar */}
+{user.tier !== 'vip' && (() => {
+  const next = user.tier === 'gold' ? 5000 : user.tier === 'silver' ? 2000 : 500
+  const prev = user.tier === 'gold' ? 2000 : user.tier === 'silver' ? 500 : 0
+  const pct = Math.min(((user.lifetimePoints - prev) / (next - prev)) * 100, 100)
+  return (
+    <div>
+      <div style={{ height: 5, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: 'linear-gradient(90deg,#2563eb,#06b6d4)', transition: 'width 0.5s ease' }} />
+      </div>
+      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 3 }}>
+        {next > user.lifetimePoints
+          ? `อีก ${next - user.lifetimePoints} pt ขึ้น ${user.tier === 'silver' ? '🥇 Gold' : user.tier === 'bronze' ? '🥈 Silver' : '👑 VIP'}`
+          : `ถึง tier ถัดไปแล้ว!`}
+      </div>
+    </div>
+  )
+    })()}
+</div>
                         </div>
                         <DropdownMenuItem asChild>
                           <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

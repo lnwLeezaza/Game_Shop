@@ -234,6 +234,15 @@ export const useOrderStore = create<OrderState>()((set) => ({
     if (!product || !buyer || buyer.balance < product.price) return null
     try {
       const order = await orderAPI.createOrder(productId, buyerId)
+      const { supabase } = await import('./supabase')
+    await supabase.rpc('add_loyalty_points', {
+      p_user_id: buyerId,
+      p_points: 10
+    })
+
+    await useAuthStore.getState().refreshUser()
+
+    await useAuthStore.getState().refreshUser()
       await useAuthStore.getState().refreshUser()
       useProductStore.getState().updateProduct(productId, { status: 'reserved' })
       set(state => ({ orders: [order, ...state.orders] }))

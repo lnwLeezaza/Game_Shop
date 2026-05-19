@@ -115,34 +115,32 @@ const LIVE_FEED_ITEMS = [
   { user: 'มิ้น***', game: 'ROV', item: '200 เหรียญ', mins: 8 },
 ]
 
-// ── VIP tiers ────────────────────────────────────────────────────────
 const VIP_TIERS = [
   {
     level: 'Bronze', icon: '🥉', minSpend: 0, maxSpend: 499,
     color: '#cd7f32', bg: 'linear-gradient(135deg, #fdf0e8, #fde8d4)',
     border: '#e8a87c',
-    perks: ['สะสมแต้ม 1 แต้ม / ฿10', 'ส่วนลด 0%', 'รับข่าวสารโปรโมชั่น'],
+    perks: ['ซื้อ/สุ่มได้ปกติ', 'ดูประวัติแต้ม', 'แลกของได้ (ถ้ามี balance)', 'ยังไม่มียศ Discord'],
   },
   {
     level: 'Silver', icon: '🥈', minSpend: 500, maxSpend: 1999,
     color: '#94a3b8', bg: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)',
     border: '#94a3b8',
-    perks: ['สะสมแต้ม 1.5 แต้ม / ฿10', 'ส่วนลด 2%', 'แลกแต้มรับเครดิต'],
+    perks: ['แลกของในร้าน', 'ยศ Silver ใน Discord', 'ห้อง #silver-lounge', 'ping สินค้าใหม่'],
   },
   {
     level: 'Gold', icon: '🥇', minSpend: 2000, maxSpend: 4999,
     color: '#ca8a04', bg: 'linear-gradient(135deg, #fefce8, #fef9c3)',
     border: '#fbbf24',
-    perks: ['สะสมแต้ม 2 แต้ม / ฿10', 'ส่วนลด 5%', 'ของขวัญวันเกิด', 'support ด่วน'],
+    perks: ['แลกของ + cashback', 'Early access 24 ชม.', 'ยศ Gold ใน Discord', 'ห้อง #gold-deals', 'Priority support'],
   },
   {
-    level: 'Diamond', icon: '💎', minSpend: 5000, maxSpend: 99999,
+    level: 'VIP', icon: '👑', minSpend: 5000, maxSpend: 99999,
     color: '#7c3aed', bg: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
     border: '#a78bfa',
-    perks: ['สะสมแต้ม 3 แต้ม / ฿10', 'ส่วนลด 10%', 'ของขวัญรายเดือน', 'โปรพิเศษเฉพาะ VIP'],
+    perks: ['แลกของ exclusive', 'Early access 72 ชม.', 'ยศ VIP + ชื่อสีพิเศษ', 'ห้อง #vip-only', 'โหวต gacha pool'],
   },
 ]
-
 // ── Reviews ──────────────────────────────────────────────────────────
 const REVIEWS = [
   { name: 'พีช***', game: 'Free Fire', stars: 5, text: 'เร็วมากกก เพชรเข้าทันทีเลย ไม่ต้องรอ ใช้บริการซ้ำทุกเดือนเลยครับ', avatar: '🎮', time: '2 วันที่แล้ว' },

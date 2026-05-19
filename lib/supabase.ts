@@ -477,6 +477,12 @@ export const gachaAPI = {
       p_user_id: userId,
     })
     if (error) throw error
+    console.log('adding loyalty points for', userId)
+
+    await supabase.rpc('add_loyalty_points', {
+      p_user_id: userId,
+      p_points: 5
+    })
     return data
   },
 
@@ -487,7 +493,7 @@ export const gachaAPI = {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data.map(mapGachaPull)
+    return (data ?? []).map(mapGachaPull)
   },
 }
 
@@ -676,6 +682,10 @@ function mapUser(d: Record<string, unknown>): User {
     kycStatus: (d.kyc_status as User['kycStatus']) || 'pending',
     createdAt: d.created_at as string,
     updatedAt: d.updated_at as string,
+    tier: (d.tier as User['tier']) || 'bronze',
+    lifetimePoints: (d.lifetime_points as number) || 0,
+    balancePoints: (d.balance_points as number) || 0,
+    lastActivityAt: (d.last_activity_at as string) || '',
   }
 }
 
