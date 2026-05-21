@@ -174,6 +174,7 @@ export function Header() {
           box-shadow: 0 2px 12px rgba(37,99,235,0.3);
            white-space: nowrap;  
         }
+
         .auth-btn-register:hover { box-shadow: 0 4px 20px rgba(37,99,235,0.45); transform: translateY(-1px); }
         .search-input {
           width: 100%; padding: 7px 12px 7px 36px; border-radius: 10px;
@@ -193,12 +194,18 @@ export function Header() {
           font-size: 14px; font-weight: 700;
           text-decoration: none; transition: all 0.15s; border: none; cursor: pointer;
         }
+          @media (max-width: 380px) {
+          .auth-btn-register {
+            padding: 6px 10px;
+            font-size: 12px;
+          }
+        }
       `}</style>
 
       <header className={`header-root${scrolled ? ' scrolled' : ''}`}>
         <div className="header-inner">
           <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px', width: '100%', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', height: 60, alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <div style={{ display: 'flex', height: 60, alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
 
               {/* ── Logo ── */}
               <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
@@ -226,7 +233,7 @@ export function Header() {
               </div>
 
               {/* ── Right Actions ── */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }} className="ml-auto">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginLeft: 'auto' }}>
 
                 <button className="icon-btn lg:hidden" onClick={() => setSearchOpen(!searchOpen)}>
                   {searchOpen ? <X size={17} /> : <Search size={17} />}
