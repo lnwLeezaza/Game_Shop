@@ -206,7 +206,7 @@ export function Header() {
 
               {/* ── Desktop Nav ── */}
               <nav style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 16 }} className="hidden md:flex">
-                <Link href="/products" className="nav-btn nav-topup">
+                <Link href="/topup" className="nav-btn nav-topup">
                   <Coins size={14} /> เติมเกม
                 </Link>
                 <Link href="/gacha" className="nav-btn nav-gacha">
@@ -362,7 +362,7 @@ export function Header() {
                         <span style={{ fontWeight: 800, fontSize: 16, background: 'linear-gradient(90deg,#2563eb,#06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>GameShop</span>
                       </div>
 
-                      <Link href="/products" className="sheet-nav-btn"
+                      <Link href="/topup" className="sheet-nav-btn"
                         style={{ background: 'rgba(255,255,255,0.8)', border: '1.5px solid #bfdbfe', color: '#1d4ed8' }}
                         onClick={() => setMobileMenuOpen(false)}>
                         <Coins size={16} /> เติมเกม
