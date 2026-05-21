@@ -8,11 +8,20 @@ const nextConfig = {
       { protocol: 'https', hostname: 'placehold.co' },
       { protocol: 'https', hostname: 'upload.wikimedia.org' },
       { protocol: 'https', hostname: 'play-lh.googleusercontent.com' },
-      { protocol: 'https', hostname: '**' }, // ← เพิ่มบรรทัดนี้
+      { protocol: 'https', hostname: '**' },
     ],
   },
   experimental: {
     serverActions: { bodySizeLimit: '5mb' },
+  },
+  async redirects() {
+    return [
+      {
+        source: '/gacha/:path+',
+        destination: '/gacha',
+        permanent: false,
+      },
+    ]
   },
 }
 export default nextConfig
