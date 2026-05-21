@@ -19,7 +19,7 @@ const SLIDES = [
     title: 'เติมเกม ซื้อไอเทม',
     highlight: 'ราคาถูกที่สุด',
     sub: 'ครบทุกเกม ส่งทันที 24 ชั่วโมง ปลอดภัย 100%',
-    cta: 'เลือกซื้อสินค้า', ctaHref: '/products',
+    cta: 'เลือกซื้อสินค้า', ctaHref: '/topup',
     cta2: 'ลองดวงตู้สุ่ม', cta2Href: '/gacha',
     gradFrom: '#1e40af', gradMid: '#1d4ed8', gradTo: '#0c4a6e', accentColor: '#06b6d4',
     bgImage: '/gamespic/All1.jfif',
@@ -30,8 +30,8 @@ const SLIDES = [
     title: 'ROV & Free Fire',
     highlight: 'ลด 30%',
     sub: 'เติมเหรียญ ROV และเพชร Free Fire ราคาพิเศษ จำกัดเวลา',
-    cta: 'เติมเกมเลย', ctaHref: '/products?category=rov',
-    cta2: 'ดูโปรทั้งหมด', cta2Href: '/products',
+    cta: 'เติมเกมเลย', ctaHref: '/topup?category=rov',
+    cta2: 'ดูโปรทั้งหมด', cta2Href: '/topup',
     gradFrom: '#dc2626', gradMid: '#ea580c', gradTo: '#431407', accentColor: '#fca5a5',
     bgImage: '/gamespic/All2.png',
     showContent: false,
@@ -41,8 +41,8 @@ const SLIDES = [
     title: 'เติม VP & Diamond',
     highlight: 'ง่าย จ่ายไว',
     sub: 'VP และ Diamond พร้อมส่งทันทีหลังชำระเงิน ไม่ต้องรอนาน',
-    cta: 'เติม Valorant', ctaHref: '/products?category=valorant',
-    cta2: 'เติม MLBB', cta2Href: '/products?category=mlbb',
+    cta: 'เติม Valorant', ctaHref: '/topup?category=valorant',
+    cta2: 'เติม MLBB', cta2Href: '/topup?category=mlbb',
     gradFrom: '#0369a1', gradMid: '#4f46e5', gradTo: '#0c0a1e', accentColor: '#93c5fd',
     bgImage: '/gamespic/All3.png',
     showContent: false,
@@ -51,15 +51,15 @@ const SLIDES = [
 
 const GAMES = [
   { id: 'rov', name: 'ROV', fullName: 'Arena of Valor', logo: '/gamespic/rov.png', fallback: 'RV', colorA: '#ef4444', colorB: '#991b1b', tag: 'ยอดนิยม', tagColor: '#ef4444', currency: 'เหรียญทอง', href: '/topup', topPack: { label: '100 เหรียญ', price: '฿29', was: '฿35' } },
-  { id: 'freefire', name: 'Free Fire', fullName: 'Garena', logo: '/gamespic/freefire.jpg', fallback: 'FF', colorA: '#f97316', colorB: '#c2410c', tag: 'ขายดี', tagColor: '#f97316', currency: 'เพชร', href: '/products?category=freefire', topPack: { label: '70 เพชร', price: '฿19', was: '฿25' } },
-  { id: 'undawn', name: 'Undawn', fullName: 'Level Infinite', logo: 'https://play-lh.googleusercontent.com/P6NRhqhWHSJuTkXO7LpMdmjV00eHhj_TqTxRCEYi1kSJGFMi0uQJDFnTzLbxjw3mV4Q=w96-h96', fallback: 'UD', colorA: '#16a34a', colorB: '#14532d', tag: 'ใหม่', tagColor: '#16a34a', currency: 'เพชร', href: '/products?category=undawn', topPack: { label: '60 เพชร', price: '฿29', was: undefined } },
-  { id: 'deltaforce', name: 'Delta Force', fullName: 'Mobile', logo: '/gamespic/delta force.jpg', fallback: 'DF', colorA: '#475569', colorB: '#0f172a', tag: '', tagColor: '', currency: 'บัตรเกม', href: '/products?category=deltaforce', topPack: { label: 'บัตร ฿50', price: '฿50', was: undefined } },
-  { id: 'codm', name: 'Call of Duty', fullName: 'Mobile', logo: 'https://play-lh.googleusercontent.com/9wGk5pUHsZBWXf9tPtEUKrJAE5PqZFpXxjVBQBIMx2cGvq7yFpOwMBfNkMjpO7FW4g=w96-h96', fallback: 'COD', colorA: '#b45309', colorB: '#451a03', tag: '', tagColor: '', currency: 'CP', href: '/products?category=codm', topPack: { label: '80 CP', price: '฿35', was: '฿45' } },
-  { id: 'haikyu', name: 'HAIKYU!!', fullName: 'Fly High', logo: 'https://play-lh.googleusercontent.com/Fc-xbXDR4rwkFCLGFVcHW-Rb3Tj1gFnj3yJgKN5vSaTIU1MDq5ABZIJ_M0xzIrv7qQ=w96-h96', fallback: 'HQ', colorA: '#ea580c', colorB: '#7c2d12', tag: 'ใหม่', tagColor: '#ea580c', currency: 'คูปอง', href: '/products?category=haikyu', topPack: { label: '60 คูปอง', price: '฿29', was: undefined } },
-  { id: 'pubg', name: 'PUBG Mobile', fullName: 'Krafton', logo: 'https://play-lh.googleusercontent.com/JRd05pyBH41qjgsJuWduRJpDeZG0Hnb0yjf2nWqO7VaGKL10-G5UIygxED-WNOgHuA=w96-h96', fallback: 'PUBG', colorA: '#ca8a04', colorB: '#78350f', tag: '', tagColor: '', currency: 'UC', href: '/products?category=pubg', topPack: { label: '60 UC', price: '฿35', was: '฿42' } },
-  { id: 'mlbb', name: 'Mobile Legends', fullName: 'Bang Bang', logo: '/gamespic/mlbb.jpg', fallback: 'ML', colorA: '#2563eb', colorB: '#1e3a8a', tag: 'ยอดนิยม', tagColor: '#2563eb', currency: 'Diamond', href: '/products?category=mlbb', topPack: { label: '86 Diamond', price: '฿29', was: '฿35' } },
-  { id: 'valorant', name: 'Valorant', fullName: 'Riot Games', logo: 'https://play-lh.googleusercontent.com/VKLY97mE7r2-xHHnKSPvI5OPNXwKJKS7yFoXMBjBjbQbOAZeUJDxVyoJHW29-eTww=w96-h96', fallback: 'VAL', colorA: '#dc2626', colorB: '#450a0a', tag: '', tagColor: '', currency: 'VP', href: '/products?category=valorant', topPack: { label: '475 VP', price: '฿89', was: '฿110' } },
-  { id: 'heartopia', name: 'Heartopia', fullName: 'เฉพาะเพชร', logo: 'https://play-lh.googleusercontent.com/q_NKzGJwb5nlfVjxWlR9f4Y4-LGdM1l-EMNHjCkuCIGb-UtQ5VZ9FH7s2U4IyBEALQ=w96-h96', fallback: 'HT', colorA: '#a21caf', colorB: '#581c87', tag: 'เพชรเท่านั้น', tagColor: '#a21caf', currency: 'เพชร', href: '/products?category=heartopia', topPack: { label: '60 เพชร', price: '฿29', was: undefined } },
+  { id: 'freefire', name: 'Free Fire', fullName: 'Garena', logo: '/gamespic/freefire.jpg', fallback: 'FF', colorA: '#f97316', colorB: '#c2410c', tag: 'ขายดี', tagColor: '#f97316', currency: 'เพชร', href: '/topup?category=freefire', topPack: { label: '70 เพชร', price: '฿19', was: '฿25' } },
+  { id: 'undawn', name: 'Undawn', fullName: 'Level Infinite', logo: 'https://play-lh.googleusercontent.com/P6NRhqhWHSJuTkXO7LpMdmjV00eHhj_TqTxRCEYi1kSJGFMi0uQJDFnTzLbxjw3mV4Q=w96-h96', fallback: 'UD', colorA: '#16a34a', colorB: '#14532d', tag: 'ใหม่', tagColor: '#16a34a', currency: 'เพชร', href: '/topup?category=undawn', topPack: { label: '60 เพชร', price: '฿29', was: undefined } },
+  { id: 'deltaforce', name: 'Delta Force', fullName: 'Mobile', logo: '/gamespic/delta force.jpg', fallback: 'DF', colorA: '#475569', colorB: '#0f172a', tag: '', tagColor: '', currency: 'บัตรเกม', href: '/topup?category=deltaforce', topPack: { label: 'บัตร ฿50', price: '฿50', was: undefined } },
+  { id: 'codm', name: 'Call of Duty', fullName: 'Mobile', logo: 'https://play-lh.googleusercontent.com/9wGk5pUHsZBWXf9tPtEUKrJAE5PqZFpXxjVBQBIMx2cGvq7yFpOwMBfNkMjpO7FW4g=w96-h96', fallback: 'COD', colorA: '#b45309', colorB: '#451a03', tag: '', tagColor: '', currency: 'CP', href: '/topup?category=codm', topPack: { label: '80 CP', price: '฿35', was: '฿45' } },
+  { id: 'haikyu', name: 'HAIKYU!!', fullName: 'Fly High', logo: 'https://play-lh.googleusercontent.com/Fc-xbXDR4rwkFCLGFVcHW-Rb3Tj1gFnj3yJgKN5vSaTIU1MDq5ABZIJ_M0xzIrv7qQ=w96-h96', fallback: 'HQ', colorA: '#ea580c', colorB: '#7c2d12', tag: 'ใหม่', tagColor: '#ea580c', currency: 'คูปอง', href: '/topup?category=haikyu', topPack: { label: '60 คูปอง', price: '฿29', was: undefined } },
+  { id: 'pubg', name: 'PUBG Mobile', fullName: 'Krafton', logo: 'https://play-lh.googleusercontent.com/JRd05pyBH41qjgsJuWduRJpDeZG0Hnb0yjf2nWqO7VaGKL10-G5UIygxED-WNOgHuA=w96-h96', fallback: 'PUBG', colorA: '#ca8a04', colorB: '#78350f', tag: '', tagColor: '', currency: 'UC', href: '/topup?category=pubg', topPack: { label: '60 UC', price: '฿35', was: '฿42' } },
+  { id: 'mlbb', name: 'Mobile Legends', fullName: 'Bang Bang', logo: '/gamespic/mlbb.jpg', fallback: 'ML', colorA: '#2563eb', colorB: '#1e3a8a', tag: 'ยอดนิยม', tagColor: '#2563eb', currency: 'Diamond', href: '/topup?category=mlbb', topPack: { label: '86 Diamond', price: '฿29', was: '฿35' } },
+  { id: 'valorant', name: 'Valorant', fullName: 'Riot Games', logo: 'https://play-lh.googleusercontent.com/VKLY97mE7r2-xHHnKSPvI5OPNXwKJKS7yFoXMBjBjbQbOAZeUJDxVyoJHW29-eTww=w96-h96', fallback: 'VAL', colorA: '#dc2626', colorB: '#450a0a', tag: '', tagColor: '', currency: 'VP', href: '/topup?category=valorant', topPack: { label: '475 VP', price: '฿89', was: '฿110' } },
+  { id: 'heartopia', name: 'Heartopia', fullName: 'เฉพาะเพชร', logo: 'https://play-lh.googleusercontent.com/q_NKzGJwb5nlfVjxWlR9f4Y4-LGdM1l-EMNHjCkuCIGb-UtQ5VZ9FH7s2U4IyBEALQ=w96-h96', fallback: 'HT', colorA: '#a21caf', colorB: '#581c87', tag: 'เพชรเท่านั้น', tagColor: '#a21caf', currency: 'เพชร', href: '/topup?category=heartopia', topPack: { label: '60 เพชร', price: '฿29', was: undefined } },
 ]
 
 const GACHA_POOLS = [
@@ -880,7 +880,7 @@ export default function HomePage() {
                   <Badge variant="outline" className="px-4 py-1.5 text-xs font-semibold cursor-pointer hover:bg-primary hover:text-white hover:border-primary transition-colors rounded-full">ทั้งหมด</Badge>
                 </Link>
                 {categories.map(cat => (
-                  <Link key={cat.id} href={`/products?category=${cat.slug}`}>
+                  <Link key={cat.id} href={`/topup?category=${cat.slug}`}>
                     <Badge variant="outline" className="px-4 py-1.5 text-xs font-semibold cursor-pointer hover:bg-primary hover:text-white hover:border-primary transition-colors rounded-full">{cat.name}</Badge>
                   </Link>
                 ))}
