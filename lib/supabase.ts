@@ -45,11 +45,15 @@ export const authAPI = {
     if (error) throw error
 
     if (data.user) {
-      await supabase.from('audit_logs').insert({
-        user_id: data.user.id,
-        action: 'user_login',
-        details: { email },
-      })
+      try {
+        await supabase.from('audit_logs').insert({
+          user_id: data.user.id,
+          action: 'user_login',
+          details: { email },
+        })
+      } catch (e) {
+        console.warn('audit log failed:', e)
+      }
     }
     return data
   },
