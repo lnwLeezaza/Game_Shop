@@ -163,6 +163,7 @@ export function Header() {
           color: #2563eb; border: 1.5px solid #bfdbfe; background: transparent;
           cursor: pointer; transition: all 0.18s;
           text-decoration: none; display: inline-flex; align-items: center;
+          white-space: nowrap;
         }
         .auth-btn-login:hover { background: rgba(37,99,235,0.06); border-color: #2563eb; }
         .auth-btn-register {
@@ -171,6 +172,7 @@ export function Header() {
           border: none; cursor: pointer; transition: all 0.18s;
           text-decoration: none; display: inline-flex; align-items: center;
           box-shadow: 0 2px 12px rgba(37,99,235,0.3);
+           white-space: nowrap;  
         }
         .auth-btn-register:hover { box-shadow: 0 4px 20px rgba(37,99,235,0.45); transform: translateY(-1px); }
         .search-input {
@@ -196,7 +198,7 @@ export function Header() {
       <header className={`header-root${scrolled ? ' scrolled' : ''}`}>
         <div className="header-inner">
           <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px', width: '100%', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', height: 60, alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', height: 60, alignItems: 'center', gap: 8, minWidth: 0 }}>
 
               {/* ── Logo ── */}
               <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
@@ -224,7 +226,7 @@ export function Header() {
               </div>
 
               {/* ── Right Actions ── */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }} className="lg:ml-0">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }} className="ml-auto">
 
                 <button className="icon-btn lg:hidden" onClick={() => setSearchOpen(!searchOpen)}>
                   {searchOpen ? <X size={17} /> : <Search size={17} />}
@@ -344,8 +346,8 @@ export function Header() {
                     </DropdownMenu>
                   </>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Link href="/login" className="auth-btn-login">{t.nav.login}</Link>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Link href="/login" className="auth-btn-login hidden sm:inline-flex">{t.nav.login}</Link>
                     <Link href="/register" className="auth-btn-register">{t.nav.register}</Link>
                   </div>
                 )}
