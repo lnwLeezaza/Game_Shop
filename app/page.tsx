@@ -442,7 +442,7 @@ function GachaCard({ pool }: { pool: typeof GACHA_POOLS[0] }) {
 // ── NEW: Promo Banner ─────────────────────────────────────────────────
 function PromoBanner() {
   return (
-    <Link href="/products">
+    <Link href="/topup">
       <div className="relative rounded-2xl overflow-hidden cursor-pointer group"
         style={{ background: 'linear-gradient(120deg, #0f172a 0%, #1e1b4b 40%, #312e81 70%, #1d4ed8 100%)', minHeight: 88, boxShadow: '0 8px 32px rgba(79,70,229,0.3)' }}>
         {/* animated shimmer */}
@@ -784,7 +784,7 @@ export default function HomePage() {
                   <p className="text-[11px] text-muted-foreground">เติมเหรียญ / เพชร / UC ส่งทันทีภายใน 1 นาที</p>
                 </div>
               </div>
-              <Link href="/products">
+              <Link href="/topup">
                 <button className="text-[12px] font-bold flex items-center gap 1 px-3 py-1.5 rounded-xl text-white transition-all hover:opacity-90" style={{ background: 'linear-gradient(90deg, #2563eb, #06b6d4)' }}>
                   ดูทั้งหมด <ChevronRight size={12} />
                 </button>
@@ -874,9 +874,9 @@ export default function HomePage() {
           {/* ── Categories ── */}
           {categories.length > 0 && (
             <section>
-              <SectionHeader icon={<Package size={13} />} title="หมวดหมู่สินค้า" href="/products" />
+              <SectionHeader icon={<Package size={13} />} title="หมวดหมู่สินค้า" href="/topup" />
               <div className="flex flex-wrap gap-2">
-                <Link href="/products">
+                <Link href="/topup">
                   <Badge variant="outline" className="px-4 py-1.5 text-xs font-semibold cursor-pointer hover:bg-primary hover:text-white hover:border-primary transition-colors rounded-full">ทั้งหมด</Badge>
                 </Link>
                 {categories.map(cat => (
