@@ -381,7 +381,7 @@ function GachaCard({ pool }: { pool: typeof GACHA_POOLS[0] }) {
   const [hovered, setHovered] = useState(false)
   const rateColors = ['#94a3b8', '#3b82f6', pool.colorA, pool.rareColor]
   return (
-    <Link href={`/gacha/${pool.id}`}>
+    <Link href="/gacha">
       <div className="relative rounded-3xl overflow-hidden cursor-pointer flex flex-col"
         style={{ background: '#fff', border: hovered ? `2px solid ${pool.colorA}` : '2px solid #e0eaff', boxShadow: hovered ? `0 28px 60px ${pool.colorA}35` : '0 4px 20px rgba(37,99,235,0.08)', transform: hovered ? 'translateY(-10px) scale(1.02)' : 'translateY(0) scale(1)', transition: 'all 0.32s cubic-bezier(0.34,1.56,0.64,1)' }}
         onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
