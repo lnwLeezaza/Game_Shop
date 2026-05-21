@@ -58,6 +58,7 @@ export function Header() {
       <style>{`
         .header-root {
           position: sticky; top: 0; z-index: 50; width: 100%;
+          box-sizing: border-box;
           transition: all 0.3s ease;
         }
         .header-root.scrolled {
@@ -68,6 +69,8 @@ export function Header() {
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border-bottom: 1px solid rgba(191,219,254,0.7);
+            width: 100%;          /* เพิ่มบรรทัดนี้ */
+          box-sizing: border-box; /* เพิ่มบรรทัดนี้ */
         }
         .logo-orb {
           position: relative; width: 36px; height: 36px; border-radius: 10px;
@@ -192,7 +195,7 @@ export function Header() {
 
       <header className={`header-root${scrolled ? ' scrolled' : ''}`}>
         <div className="header-inner">
-          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 16px', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', height: 60, alignItems: 'center', gap: 12 }}>
 
               {/* ── Logo ── */}
